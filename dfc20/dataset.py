@@ -19,7 +19,7 @@ S2_BANDS_LR = [1, 10, 11]
 S2_BANDS_ALL = [1,2,3,4,5,6,7,8,9,10,11,12,13]
 
 # util function for reading s2 data
-def load_s2(path, use_s2_RGB, use_s2_hr, use_s2_all, as_tensor):
+def load_s2(path, use_s2_RGB, use_s2_hr, use_s2_all):
     # band selection 
     bands=[]
     if use_s2_RGB: bands = S2_BANDS_RGB
@@ -31,11 +31,11 @@ def load_s2(path, use_s2_RGB, use_s2_hr, use_s2_all, as_tensor):
 
     # Normalization - maybe standardization with band means better? -> esp. for brightness?
     s2 = s2.astype(np.float32)
-    s2 = np.clip(s2, 0, 10000)
+    s2 = np.clip(s2, 0, 10000) 
     s2 /= 10000
 
-    if as_tensor:
-        s2 = to_tensor(s2)
+    #if as_tensor:
+    #    s2 = torch.tensor(s2)
 
     return s2
 
@@ -58,7 +58,7 @@ def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, as_tensor):
 
     # load s2 data
     if use_s2:
-        img = load_s2(sample["s2"], use_s2_RGB, use_s2_hr, use_s2_all, as_tensor)
+        img = load_s2(sample["s2"], use_s2_RGB, use_s2_hr, use_s2_all)
 
     # load s1 data
     #if use_s1:
@@ -69,6 +69,9 @@ def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, as_tensor):
 
     # load label
     dfc = load_dfc(sample["dfc"])
+
+    if as_tensor:
+        return {'image': torch.tensor(img), 'label': torch.tensor(dfc, dtype=torch.long), 'id': sample["id"]}
 
     return {'image': img, 'label': dfc, 'id': sample["id"]}
 
@@ -91,7 +94,7 @@ def get_ninputs(use_s1, use_s2_RGB, use_s2_hr, use_s2_all):
 def to_tensor(sample):
         img, label, sample_id = sample['image'], sample['label'], sample['id']
         
-        sample = {'image': torch.tensor(img), 'label':label, 'id':sample_id}
+        sample = {'image': torch.tensor(img), 'label':torch.tensor(label, dtype=torch.long), 'id':sample_id}
         return sample
 
 
