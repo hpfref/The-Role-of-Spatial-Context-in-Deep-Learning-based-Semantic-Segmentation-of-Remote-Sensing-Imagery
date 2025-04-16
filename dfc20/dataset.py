@@ -18,6 +18,18 @@ S2_BANDS_MR = [5, 6, 7, 9, 12, 13]
 S2_BANDS_LR = [1, 10, 11]
 S2_BANDS_ALL = [1,2,3,4,5,6,7,8,9,10,11,12,13]
 
+# valid classes
+DFC20_LABEL_MAP = {
+    1: 0,   # Forest
+    2: 1,   # Shrubland
+    4: 2,   # Grassland
+    5: 3,   # Wetlands
+    6: 4,   # Croplands
+    7: 5,   # Urban/Built-up
+    9: 6,   # Barren
+    10: 7   # Water
+}
+
 # util function for reading s2 data
 def load_s2(path, use_s2_RGB, use_s2_hr, use_s2_all):
     # band selection 
@@ -69,6 +81,9 @@ def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, as_tensor):
 
     # load label
     dfc = load_dfc(sample["dfc"])
+
+    # Vectorized remapping (applies self.label_map to all pixels)
+    dfc = np.vectorize(DFC20_LABEL_MAP.get)(dfc).astype(np.float32)
 
     if as_tensor:
         return {'image': torch.tensor(img), 'label': torch.tensor(dfc, dtype=torch.long), 'id': sample["id"]}
@@ -127,24 +142,25 @@ class DFC20(data.Dataset):
         # provide number of input channels
         self.n_inputs = get_ninputs(use_s1, use_s2_RGB, use_s2_hr, use_s2_all)
 
-        # provide number of classes 
-        self.n_classes = 10
-
         # make sure parent dir exists
         assert os.path.exists(path)
 
+        # provide number of classes 
+        self.n_classes = 8
+
+
         # classnames with colors
         self.class_info = {
-            1: ("Forest", "#009900"),
-            2: ("Shrubland", "#c6b044"),
-            3: ("Savanna", "#fbf113"),
-            4: ("Grassland", "#b6ff05"),
-            5: ("Wetlands", "#27ff87"),
-            6: ("Croplands", "#c24f44"),
-            7: ("Urban/Built-up", "#a5a5a5"),
-            8: ("Snow/Ice", "#69fff8"),
-            9: ("Barren", "#f9ffa4"),
-            10: ("Water", "#1c0dff")
+            0: ("Forest", "#009900"),
+            1: ("Shrubland", "#c6b044"),
+            #3: ("Savanna", "#fbf113"), #not in data
+            2: ("Grassland", "#b6ff05"),
+            3: ("Wetlands", "#27ff87"),
+            4: ("Croplands", "#c24f44"),
+            5: ("Urban/Built-up", "#a5a5a5"),
+            #8: ("Snow/Ice", "#69fff8"), #not in data
+            6: ("Barren", "#f9ffa4"),
+            7: ("Water", "#1c0dff")
         }
 
         # get samples

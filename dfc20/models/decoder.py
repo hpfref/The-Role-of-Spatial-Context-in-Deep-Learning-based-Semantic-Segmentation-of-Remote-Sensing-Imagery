@@ -58,7 +58,7 @@ class Decoder(nn.Module):
         self.up2 = Up(512, 128, bilinear)
         self.up3 = Up(256, 64, bilinear)
         self.up4 = Up(128, 64, bilinear)
-        self.outc = OutConv(64, 10) 
+        self.outc = OutConv(64, 8) 
 
     def forward(self, x1, x2, x3, x4, x5):
         x = self.up1(x5, x4)
