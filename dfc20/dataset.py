@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import torch
+import time
 
 import torch.utils.data as data
 
@@ -65,28 +66,42 @@ def load_dfc(path):
 
 # util function for reading data from single sample
 def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, as_tensor):
+    #total_start = time.time()
+    #times = {}
 
     use_s2 = use_s2_RGB or use_s2_hr or use_s2_all
 
-    # load s2 data
-    if use_s2:
+    # load s1/s2
+    #t0 = time.time()
+    if use_s1:
+        img = None
+        #times['load_s1s2'] = 0
+    elif use_s2:
         img = load_s2(sample["s2"], use_s2_RGB, use_s2_hr, use_s2_all)
+        #times['load_s1s2'] = time.time() - t0
+    else:
+      img = None
+        
 
-    # load s1 data
-    #if use_s1:
-    #    if use_s2:
-    #        img = np.concatenate((img, load_s1(sample["s1"])), axis=0)
-    #    else:
-    #        img = load_s1(sample["s1"])
-
-    # load label
+    # load labels
+    #t1 = time.time()
     dfc = load_dfc(sample["dfc"])
+    #times['load_dfc'] = time.time() - t1
 
-    # Vectorized remapping (applies self.label_map to all pixels)
+    # remap labels
+    #t2 = time.time()
     dfc = np.vectorize(DFC20_LABEL_MAP.get)(dfc).astype(np.float32)
+    #times['remap'] = time.time() - t2
 
+    # convert to tensor
     if as_tensor:
-        return {'image': torch.tensor(img), 'label': torch.tensor(dfc, dtype=torch.long), 'id': sample["id"]}
+        #t3 = time.time()
+        img = torch.tensor(img)
+        dfc = torch.tensor(dfc, dtype=torch.long)
+        #times['to_tensor'] = time.time() - t3
+
+    #total_time = time.time() - total_start
+    #print(f"Total: {total_time:.4f}s | load_s1s2: {times['load_s1s2']:.4f}s | load_dfc: {times['load_dfc']:.4f}s | remap: {times['remap']:.4f}s | to_tensor: {times.get('to_tensor', 0):.4f}s")
 
     return {'image': img, 'label': dfc, 'id': sample["id"]}
 
