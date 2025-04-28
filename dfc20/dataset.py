@@ -31,8 +31,11 @@ DFC20_LABEL_MAP = {
     10: 7   # Water
 }
 
+S2_TRAIN_MEAN = np.load("utilities/s2_train_mean.npy")  # shape (13,)
+S2_TRAIN_STD  = np.load("utilities/s2_train_std.npy")   # shape (13,)
+
 # util function for reading s2 data
-def load_s2(path, use_s2_RGB, use_s2_hr, use_s2_all):
+def load_s2(path, use_s2_RGB, use_s2_hr, use_s2_all, normalize, standardize):
     # band selection 
     bands=[]
     if use_s2_RGB: bands = S2_BANDS_RGB
@@ -41,14 +44,20 @@ def load_s2(path, use_s2_RGB, use_s2_hr, use_s2_all):
 
     with rasterio.open(path) as data:
         s2 = data.read(bands)
+        s2 = s2.astype(np.float32)
 
-    # Normalization - maybe standardization with band means better? -> esp. for brightness?
-    s2 = s2.astype(np.float32)
-    s2 = np.clip(s2, 0, 10000) 
-    s2 /= 10000
+    if normalize:
+      s2 = np.clip(s2, 0, 10000) 
+      s2 /= 10000
 
-    #if as_tensor:
-    #    s2 = torch.tensor(s2)
+    elif standardize:
+      # pick selected bands
+      mean = S2_TRAIN_MEAN[np.array(bands) - 1].astype(np.float32)
+      std  = S2_TRAIN_STD[np.array(bands) - 1].astype(np.float32)
+      # broadcast mean/std: (13,) -> (13, 1, 1)
+      mean = mean[:, None, None]
+      std  = std[:, None, None]
+      s2 = (s2 - mean) / std
 
     return s2
 
@@ -65,7 +74,7 @@ def load_dfc(path):
     return dfc
 
 # util function for reading data from single sample
-def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, as_tensor):
+def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, normalize, standardize):
     #total_start = time.time()
     #times = {}
 
@@ -77,11 +86,10 @@ def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, as_tensor):
         img = None
         #times['load_s1s2'] = 0
     elif use_s2:
-        img = load_s2(sample["s2"], use_s2_RGB, use_s2_hr, use_s2_all)
+        img = load_s2(sample["s2"], use_s2_RGB, use_s2_hr, use_s2_all, normalize, standardize)
         #times['load_s1s2'] = time.time() - t0
     else:
       img = None
-        
 
     # load labels
     #t1 = time.time()
@@ -93,15 +101,8 @@ def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, as_tensor):
     dfc = np.vectorize(DFC20_LABEL_MAP.get)(dfc).astype(np.float32)
     #times['remap'] = time.time() - t2
 
-    # convert to tensor
-    if as_tensor:
-        #t3 = time.time()
-        img = torch.tensor(img)
-        dfc = torch.tensor(dfc, dtype=torch.long)
-        #times['to_tensor'] = time.time() - t3
-
     #total_time = time.time() - total_start
-    #print(f"Total: {total_time:.4f}s | load_s1s2: {times['load_s1s2']:.4f}s | load_dfc: {times['load_dfc']:.4f}s | remap: {times['remap']:.4f}s | to_tensor: {times.get('to_tensor', 0):.4f}s")
+    #print(f"Total: {total_time:.4f}s | load_s1s2: {times['load_s1s2']:.4f}s | load_dfc: {times['load_dfc']:.4f}s | remap: {times['remap']:.4f}s")
 
     return {'image': img, 'label': dfc, 'id': sample["id"]}
 
@@ -135,7 +136,7 @@ class DFC20(data.Dataset):
     # expects dataset dir as:
     #       -
 
-    def __init__(self, path, subset="train", use_s1=False, use_s2_RGB=False, use_s2_hr=False, use_s2_all=False, as_tensor=False):
+    def __init__(self, path, subset="train", use_s1=False, use_s2_RGB=False, use_s2_hr=False, use_s2_all=False, as_tensor=False, normalize=False, standardize=False, augment=None):
         """Initialize the dataset"""
 
         # inizialize
@@ -151,6 +152,9 @@ class DFC20(data.Dataset):
         self.use_s2_hr = use_s2_hr 
         self.use_s2_all = use_s2_all 
         self.as_tensor = as_tensor
+        self.normalize = normalize
+        self.standardize = standardize
+        self.augment = augment
         
         assert subset in ["train", "val", "test"]
         
@@ -177,6 +181,9 @@ class DFC20(data.Dataset):
             6: ("Barren", "#f9ffa4"),
             7: ("Water", "#1c0dff")
         }
+
+        # Class Frequencies
+        self.freq = np.array([23.1, 6.0, 11.6, 7.0, 17.0, 11.0, 2.3, 22.0])
 
         # get samples
         self.samples = []
@@ -223,7 +230,29 @@ class DFC20(data.Dataset):
 
         # get and load sample from index file
         sample = self.samples[index]
-        return load_sample(sample, self.use_s1, self.use_s2_RGB, self.use_s2_hr, self.use_s2_all, self.as_tensor)
+        
+        # Load the sample and apply the transformations
+        sample_data = load_sample(sample, self.use_s1, self.use_s2_RGB, self.use_s2_hr, self.use_s2_all, self.normalize, self.standardize)
+        
+        # Apply augmentation if provided
+        if self.augment:
+            image = sample_data['image']
+            image = np.transpose(image, (1, 2, 0)) # for rotation, ...
+            label = sample_data['label']
+            augmented = self.augment(image=image, mask=label)
+            image = augmented['image']
+            image = np.transpose(image, (2, 0, 1))
+            label = augmented['mask']
+        else:
+            image = sample_data['image']
+            label = sample_data['label']
+
+        # convert to tensor
+        if self.as_tensor:
+            img = torch.tensor(image)
+            label = torch.tensor(label, dtype=torch.long)
+        
+        return {'image': image, 'label': label, 'id': sample["id"]}
 
 
     def __len__(self):
