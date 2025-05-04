@@ -4,15 +4,26 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from encoder import Encoder
-from decoder import Decoder
+from encoder import EncoderSmall, EncoderBig
+from decoder import DecoderSmall, DecoderBig
 
 
-class UNet(nn.Module):
+class UNetSmall(nn.Module):
     def __init__(self, n_channels, bilinear=True):
-        super(UNet, self).__init__()
-        self.encoder = Encoder(n_channels)
-        self.decoder = Decoder(bilinear)
+        super(UNetSmall, self).__init__()
+        self.encoder = EncoderSmall(n_channels)  
+        self.decoder = DecoderSmall(bilinear)   
+
+    def forward(self, x):
+        x1, x2, x3, x4 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3, x4)
+        return logits
+
+class UNetBig(nn.Module):
+    def __init__(self, n_channels, bilinear=True):
+        super(UNetBig, self).__init__()
+        self.encoder = EncoderBig(n_channels)
+        self.decoder = DecoderBig(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5 = self.encoder(x)
@@ -23,7 +34,7 @@ class UNet(nn.Module):
 
 # Example usage:
 if __name__ == "__main__":
-    model = UNet(n_channels=3)
+    model = UNetBig(n_channels=3)
     print(model)
 
 

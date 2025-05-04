@@ -12,6 +12,7 @@ class DoubleConv(nn.Module):
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
+            nn.Dropout2d(0.5), # test this
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
@@ -50,7 +51,7 @@ class OutConv(nn.Module):
         return self.conv(x)
 
 
-class Decoder(nn.Module):
+class DecoderBig(nn.Module):
     """Decoder with multiple upsampling steps"""
     def __init__(self, bilinear=True):
         super().__init__()
@@ -62,13 +63,26 @@ class Decoder(nn.Module):
 
     def forward(self, x1, x2, x3, x4, x5):
         x = self.up1(x5, x4)
-        #print(f"After up1: {x.shape}")  # Print shape after up1
         x = self.up2(x, x3)
-        #print(f"After up2: {x.shape}")  # Print shape after up2
         x = self.up3(x, x2)
-        #print(f"After up3: {x.shape}")  # Print shape after up3
         x = self.up4(x, x1)
-        #print(f"After up4: {x.shape}")  # Print shape after up4
-        x = self.outc(x)  # Output from the final convolution layer
+        x = self.outc(x) 
         #print(f"Final output shape: {x.shape}")  # Output should be (batch_size, 10, H, W)
+        return x
+
+
+class DecoderSmall(nn.Module):
+    """Decoder with reduced depth"""
+    def __init__(self, bilinear=True):
+        super().__init__()
+        self.up1 = Up(256, 128, bilinear) 
+        self.up2 = Up(128, 64, bilinear) 
+        self.up3 = Up(64, 32, bilinear)    
+        self.outc = OutConv(32, 8)        
+
+    def forward(self, x1, x2, x3, x4):
+        x = self.up1(x4, x3)
+        x = self.up2(x, x2)
+        x = self.up3(x, x1)
+        x = self.outc(x)
         return x
