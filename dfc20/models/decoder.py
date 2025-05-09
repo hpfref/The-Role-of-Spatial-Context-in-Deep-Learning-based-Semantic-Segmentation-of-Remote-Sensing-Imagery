@@ -6,17 +6,21 @@ import torch.nn.functional as F
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, apply_dropout=False):
         super().__init__()
-        self.double_conv = nn.Sequential(
+        layers = [
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
-            nn.Dropout2d(0.5), # test this
+            nn.ReLU(inplace=True)
+        ]
+        if apply_dropout:
+            layers.append(nn.Dropout2d(0.4))  # Apply dropout only when specified
+        layers += [
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
-        )
+        ]
+        self.double_conv = nn.Sequential(*layers)
 
     def forward(self, x):
         return self.double_conv(x)
@@ -24,14 +28,14 @@ class DoubleConv(nn.Module):
 
 class Up(nn.Module):
     """Upscaling then double conv"""
-    def __init__(self, in_channels, out_channels, bilinear=True):
+    def __init__(self, in_channels, out_channels, bilinear=True, apply_dropout=False):
         super().__init__()
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         else:
             self.up = nn.ConvTranspose2d(in_channels // 2, in_channels // 2, kernel_size=2, stride=2)
 
-        self.conv = DoubleConv(in_channels, out_channels)
+        self.conv = DoubleConv(in_channels, out_channels, apply_dropout=apply_dropout)
 
     def forward(self, x1, x2):
         x1 = self.up(x1)
@@ -52,33 +56,30 @@ class OutConv(nn.Module):
 
 
 class DecoderBig(nn.Module):
-    """Decoder with multiple upsampling steps"""
     def __init__(self, bilinear=True):
         super().__init__()
-        self.up1 = Up(1024, 256, bilinear)
-        self.up2 = Up(512, 128, bilinear)
-        self.up3 = Up(256, 64, bilinear)
-        self.up4 = Up(128, 64, bilinear)
-        self.outc = OutConv(64, 8) 
+        self.up1 = Up(1024, 256, bilinear, apply_dropout=True)
+        self.up2 = Up(512, 128, bilinear, apply_dropout=True)
+        self.up3 = Up(256, 64, bilinear)                       
+        self.up4 = Up(128, 64, bilinear)                      
+        self.outc = OutConv(64, 8)
 
     def forward(self, x1, x2, x3, x4, x5):
         x = self.up1(x5, x4)
         x = self.up2(x, x3)
         x = self.up3(x, x2)
         x = self.up4(x, x1)
-        x = self.outc(x) 
-        #print(f"Final output shape: {x.shape}")  # Output should be (batch_size, 10, H, W)
+        x = self.outc(x)
         return x
 
 
 class DecoderSmall(nn.Module):
-    """Decoder with reduced depth"""
     def __init__(self, bilinear=True):
         super().__init__()
-        self.up1 = Up(256, 128, bilinear) 
-        self.up2 = Up(128, 64, bilinear) 
-        self.up3 = Up(64, 32, bilinear)    
-        self.outc = OutConv(32, 8)        
+        self.up1 = Up(256 + 128, 128, bilinear, apply_dropout=True) 
+        self.up2 = Up(128 + 64, 64, bilinear)
+        self.up3 = Up(64 + 32, 32, bilinear)
+        self.outc = OutConv(32, 8)
 
     def forward(self, x1, x2, x3, x4):
         x = self.up1(x4, x3)
