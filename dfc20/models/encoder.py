@@ -64,7 +64,7 @@ class EncoderSmall(nn.Module):
         self.inc = DoubleConv(in_channels, 32)
         self.down1 = Down(32, 64)
         self.down2 = Down(64, 128)
-        self.down3 = Down(128, 256, apply_dropout=True) 
+        self.down3 = Down(128, 256) # apply_dropout=True 
 
     def forward(self, x):
         x1 = self.inc(x)
@@ -72,5 +72,4 @@ class EncoderSmall(nn.Module):
         x3 = self.down2(x2)
         x4 = self.down3(x3)
         return x1, x2, x3, x4
-        x4 = self.down3(x3)
-        return x1, x2, x3, x4
+

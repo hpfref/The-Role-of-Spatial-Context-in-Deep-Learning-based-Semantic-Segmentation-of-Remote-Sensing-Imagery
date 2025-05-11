@@ -76,7 +76,7 @@ class DecoderBig(nn.Module):
 class DecoderSmall(nn.Module):
     def __init__(self, bilinear=True):
         super().__init__()
-        self.up1 = Up(256 + 128, 128, bilinear, apply_dropout=True) 
+        self.up1 = Up(256 + 128, 128, bilinear) # apply_dropout=True
         self.up2 = Up(128 + 64, 64, bilinear)
         self.up3 = Up(64 + 32, 32, bilinear)
         self.outc = OutConv(32, 8)

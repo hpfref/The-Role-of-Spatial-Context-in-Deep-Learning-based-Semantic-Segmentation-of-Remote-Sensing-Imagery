@@ -136,7 +136,8 @@ class DFC20(data.Dataset):
     # expects dataset dir as:
     #       -
 
-    def __init__(self, path, subset="train", use_s1=False, use_s2_RGB=False, use_s2_hr=False, use_s2_all=False, as_tensor=False, normalize=False, standardize=False, augment=None):
+    def __init__(self, path, subset="train", use_s1=False, use_s2_RGB=False, use_s2_hr=False, use_s2_all=False, as_tensor=False, 
+                 normalize=False, standardize=False, augment=None, in_memory=False):
         """Initialize the dataset"""
 
         # inizialize
@@ -155,7 +156,8 @@ class DFC20(data.Dataset):
         self.normalize = normalize
         self.standardize = standardize
         self.augment = augment
-        
+
+        self.in_memory = in_memory
         assert subset in ["train", "val", "test"]
         
         # provide number of input channels
@@ -164,9 +166,8 @@ class DFC20(data.Dataset):
         # make sure parent dir exists
         assert os.path.exists(path)
 
-        # provide number of classes 
+        # number of classes 
         self.n_classes = 8
-
 
         # classnames with colors
         self.class_info = {
@@ -221,6 +222,13 @@ class DFC20(data.Dataset):
         # sort list of samples
         self.samples = sorted(self.samples, key=lambda i: i['id'])
 
+        # Preload the data into memory
+        if self.in_memory:
+            self.preloaded_data = []
+            for sample in self.samples:
+                sample_data = load_sample(sample, self.use_s1, self.use_s2_RGB, self.use_s2_hr, self.use_s2_all, self.normalize, self.standardize)
+                self.preloaded_data.append(sample_data)
+
         print("loaded", len(self.samples), "samples from the DFC20 subset", subset)
         
         
@@ -228,28 +236,31 @@ class DFC20(data.Dataset):
     def __getitem__(self, index):
         """Get a single example from the dataset"""
 
-        # get and load sample from index file
-        sample = self.samples[index]
-        
-        # Load the sample and apply the transformations
-        sample_data = load_sample(sample, self.use_s1, self.use_s2_RGB, self.use_s2_hr, self.use_s2_all, self.normalize, self.standardize)
-        
+        if self.in_memory:
+            # Retrieve the preloaded sample data
+            sample = self.preloaded_data[index]
+        else:
+            # get and load sample from index file
+            sample = self.samples[index]
+            # Load the sample and apply the transformations
+            sample = load_sample(sample, self.use_s1, self.use_s2_RGB, self.use_s2_hr, self.use_s2_all, self.normalize, self.standardize)
+
         # Apply augmentation if provided
         if self.augment:
-            image = sample_data['image']
+            image = sample['image']
             image = np.transpose(image, (1, 2, 0)) # for rotation, ...
-            label = sample_data['label']
+            label = sample['label']
             augmented = self.augment(image=image, mask=label)
             image = augmented['image']
             image = np.transpose(image, (2, 0, 1))
             label = augmented['mask']
         else:
-            image = sample_data['image']
-            label = sample_data['label']
+            image = sample['image']
+            label = sample['label']
 
         # convert to tensor
         if self.as_tensor:
-            img = torch.tensor(image)
+            image = torch.tensor(image)
             label = torch.tensor(label, dtype=torch.long)
         
         return {'image': image, 'label': label, 'id': sample["id"]}
@@ -259,8 +270,6 @@ class DFC20(data.Dataset):
         """Get number of samples in the dataset"""
         return len(self.samples)          
     
-
-
 
         
         
