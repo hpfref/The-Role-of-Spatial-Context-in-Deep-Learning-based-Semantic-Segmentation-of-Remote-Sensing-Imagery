@@ -55,11 +55,30 @@ class OutConv(nn.Module):
         return self.conv(x)
 
 
+class DecoderHuge(nn.Module):
+    def __init__(self, bilinear=True):
+        super().__init__()
+        self.up1 = Up(2048, 512, bilinear, apply_dropout=False)
+        self.up2 = Up(1024, 256, bilinear, apply_dropout=False)
+        self.up3 = Up(512, 128, bilinear, apply_dropout=False)
+        self.up4 = Up(256, 64, bilinear)                       
+        self.up5 = Up(128, 64, bilinear)                      
+        self.outc = OutConv(64, 8)
+
+    def forward(self, x1, x2, x3, x4, x5, x6):
+        x = self.up1(x6, x5)
+        x = self.up2(x, x4)
+        x = self.up3(x, x3)
+        x = self.up4(x, x2)
+        x = self.up5(x, x1)
+        x = self.outc(x)
+        return x
+    
 class DecoderBig(nn.Module):
     def __init__(self, bilinear=True):
         super().__init__()
-        self.up1 = Up(1024, 256, bilinear, apply_dropout=True)
-        self.up2 = Up(512, 128, bilinear, apply_dropout=True)
+        self.up1 = Up(1024, 256, bilinear, apply_dropout=False)
+        self.up2 = Up(512, 128, bilinear, apply_dropout=False)
         self.up3 = Up(256, 64, bilinear)                       
         self.up4 = Up(128, 64, bilinear)                      
         self.outc = OutConv(64, 8)
@@ -76,14 +95,15 @@ class DecoderBig(nn.Module):
 class DecoderSmall(nn.Module):
     def __init__(self, bilinear=True):
         super().__init__()
-        self.up1 = Up(256 + 128, 128, bilinear) # apply_dropout=True
+        #self.up1 = Up(256 + 128, 128, bilinear) # apply_dropout=True
         self.up2 = Up(128 + 64, 64, bilinear)
         self.up3 = Up(64 + 32, 32, bilinear)
         self.outc = OutConv(32, 8)
 
-    def forward(self, x1, x2, x3, x4):
-        x = self.up1(x4, x3)
-        x = self.up2(x, x2)
+    def forward(self, x1, x2, x3):
+    #def forward(self, x1, x2, x3, x4):
+        #x = self.up1(x4, x3)
+        x = self.up2(x3, x2)
         x = self.up3(x, x1)
         x = self.outc(x)
         return x

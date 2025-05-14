@@ -6,6 +6,7 @@ import pandas as pd
 from tqdm import tqdm
 import torch
 import time
+import json
 
 import torch.utils.data as data
 
@@ -35,18 +36,20 @@ S2_TRAIN_MEAN = np.load("utilities/s2_train_mean.npy")  # shape (13,)
 S2_TRAIN_STD  = np.load("utilities/s2_train_std.npy")   # shape (13,)
 
 # util function for reading s2 data
-def load_s2(path, use_s2_RGB, use_s2_hr, use_s2_all, normalize, standardize):
+def load_s2(path, use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr, normalize, standardize):
     # band selection 
     bands=[]
     if use_s2_RGB: bands = S2_BANDS_RGB
     elif use_s2_hr: bands = S2_BANDS_HR
     elif use_s2_all : bands = S2_BANDS_ALL
+    elif use_s2_hr_mr: bands = S2_BANDS_HR + S2_BANDS_MR
 
     with rasterio.open(path) as data:
         s2 = data.read(bands)
         s2 = s2.astype(np.float32)
 
     if normalize:
+      #s2 = np.clip(s2 / np.max(s2), 0, 1)
       s2 = np.clip(s2, 0, 10000) 
       s2 /= 10000
 
@@ -74,11 +77,11 @@ def load_dfc(path):
     return dfc
 
 # util function for reading data from single sample
-def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, normalize, standardize):
+def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr, normalize, standardize):
     #total_start = time.time()
     #times = {}
 
-    use_s2 = use_s2_RGB or use_s2_hr or use_s2_all
+    use_s2 = use_s2_RGB or use_s2_hr or use_s2_all or use_s2_hr_mr
 
     # load s1/s2
     #t0 = time.time()
@@ -86,7 +89,7 @@ def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, normalize, st
         img = None
         #times['load_s1s2'] = 0
     elif use_s2:
-        img = load_s2(sample["s2"], use_s2_RGB, use_s2_hr, use_s2_all, normalize, standardize)
+        img = load_s2(sample["s2"], use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr, normalize, standardize)
         #times['load_s1s2'] = time.time() - t0
     else:
       img = None
@@ -108,7 +111,7 @@ def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, normalize, st
 
 
 #  calculate number of input channels  
-def get_ninputs(use_s1, use_s2_RGB, use_s2_hr, use_s2_all):
+def get_ninputs(use_s1, use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr):
     n_inputs = 0
     if use_s2_hr:
         n_inputs = len(S2_BANDS_HR)
@@ -118,15 +121,11 @@ def get_ninputs(use_s1, use_s2_RGB, use_s2_hr, use_s2_all):
         n_inputs = 2
     elif use_s2_RGB :
         n_inputs = 3
+    elif use_s2_hr_mr:
+        n_inputs = len(S2_BANDS_HR) + len(S2_BANDS_MR)
         
     return n_inputs
 
-
-def to_tensor(sample):
-        img, label, sample_id = sample['image'], sample['label'], sample['id']
-        
-        sample = {'image': torch.tensor(img), 'label':torch.tensor(label, dtype=torch.long), 'id':sample_id}
-        return sample
 
 
 
@@ -136,7 +135,7 @@ class DFC20(data.Dataset):
     # expects dataset dir as:
     #       -
 
-    def __init__(self, path, subset="train", use_s1=False, use_s2_RGB=False, use_s2_hr=False, use_s2_all=False, as_tensor=False, 
+    def __init__(self, path, subset="train", use_s1=False, use_s2_RGB=False, use_s2_hr=False, use_s2_all=False, use_s2_hr_mr=False, as_tensor=False, 
                  normalize=False, standardize=False, augment=None, in_memory=False):
         """Initialize the dataset"""
 
@@ -144,13 +143,14 @@ class DFC20(data.Dataset):
         super(DFC20, self).__init__()
 
         # make sure input parameters are okay
-        if not (use_s1 or use_s2_RGB or use_s2_hr or use_s2_all):
+        if not (use_s1 or use_s2_RGB or use_s2_hr or use_s2_all or use_s2_hr_mr):
             raise ValueError("No input specified, set at least one of "
                              + "use_[s2, s1, RGB] to True!")
         
         self.use_s1 = use_s1
         self.use_s2_RGB = use_s2_RGB
         self.use_s2_hr = use_s2_hr 
+        self.use_s2_hr_mr = use_s2_hr_mr
         self.use_s2_all = use_s2_all 
         self.as_tensor = as_tensor
         self.normalize = normalize
@@ -161,7 +161,7 @@ class DFC20(data.Dataset):
         assert subset in ["train", "val", "test"]
         
         # provide number of input channels
-        self.n_inputs = get_ninputs(use_s1, use_s2_RGB, use_s2_hr, use_s2_all)
+        self.n_inputs = get_ninputs(use_s1, use_s2_RGB, use_s2_hr, use_s2_hr_mr, use_s2_all)
 
         # make sure parent dir exists
         assert os.path.exists(path)
@@ -191,10 +191,16 @@ class DFC20(data.Dataset):
 
         if subset == "train":
             sample_dir = os.path.join(path, "train")
+            with open("utilities/train_majority_class_per_image.json", "r") as f:
+                self.image_majority_class = json.load(f)
         elif subset == "val":
             sample_dir = os.path.join(path, "val")
+            with open("utilities/val_majority_class_per_image.json", "r") as f:
+                self.image_majority_class = json.load(f)
         else:
             sample_dir = os.path.join(path, "test")
+            with open("utilities/test_majority_class_per_image.json", "r") as f:
+                self.image_majority_class = json.load(f)
 
         # Get all s2 patches in the corresponding subset (train/val/test)
         s2_files = glob.glob(os.path.join(sample_dir, "s2", "*.tif"))
@@ -226,7 +232,7 @@ class DFC20(data.Dataset):
         if self.in_memory:
             self.preloaded_data = []
             for sample in self.samples:
-                sample_data = load_sample(sample, self.use_s1, self.use_s2_RGB, self.use_s2_hr, self.use_s2_all, self.normalize, self.standardize)
+                sample_data = load_sample(sample, self.use_s1, self.use_s2_RGB, self.use_s2_hr, self.use_s2_hr_mr, self.use_s2_all, self.normalize, self.standardize)
                 self.preloaded_data.append(sample_data)
 
         print("loaded", len(self.samples), "samples from the DFC20 subset", subset)
@@ -243,7 +249,7 @@ class DFC20(data.Dataset):
             # get and load sample from index file
             sample = self.samples[index]
             # Load the sample and apply the transformations
-            sample = load_sample(sample, self.use_s1, self.use_s2_RGB, self.use_s2_hr, self.use_s2_all, self.normalize, self.standardize)
+            sample = load_sample(sample, self.use_s1, self.use_s2_RGB, self.use_s2_hr, self.use_s2_hr_mr, self.use_s2_all, self.normalize, self.standardize)
 
         # Apply augmentation if provided
         if self.augment:
@@ -258,12 +264,16 @@ class DFC20(data.Dataset):
             image = sample['image']
             label = sample['label']
 
+        # add majority label
+        majority_class = self.image_majority_class[index]
+
         # convert to tensor
         if self.as_tensor:
             image = torch.tensor(image)
             label = torch.tensor(label, dtype=torch.long)
+            majority_class = torch.tensor(majority_class, dtype=torch.long)
         
-        return {'image': image, 'label': label, 'id': sample["id"]}
+        return {'image': image, 'label': label, 'id': sample["id"], 'majority_class': majority_class}
 
 
     def __len__(self):
@@ -271,9 +281,6 @@ class DFC20(data.Dataset):
         return len(self.samples)          
     
 
-        
-        
-# DEBUG usage examples
 if __name__ == "__main__":
     
     path = "./data"
@@ -285,65 +292,3 @@ if __name__ == "__main__":
           "number of classes", ds.n_classes)
     
 
-"""
-bands_mean_train = {'s1_mean': [x, x],
-                    's2_mean': [1275.56366148,1038.57734603,949.87916508,814.60094421,1049.14282086,1747.35075034,
-                                2033.31146565,1991.47800801,2195.7438094,800.6378601,12.03797621,1521.99609528,970.35119174]}
-
-bands_std_train = {'s1_mean': [x, x],
-                   's2_mean': [ 203.10894865,269.65605412,309.13100577,482.80068554,490.5296078,928.52234092,1171.08669927,
-                               1181.02504077,1297.944547,500.73803514,7.11942401,990.00060658,765.27912456]}
-                               
-                               
-                            
-
-class Normalize(object): # actually standardiziation
-    def __init__(self, bands_mean, bands_std):
-        
-        self.bands_s1_mean = bands_mean['s1_mean']
-        self.bands_s1_std = bands_std['s1_std']
-
-        self.bands_s2_mean = bands_mean['s2_mean']
-        self.bands_s2_std = bands_std['s2_std']
-        
-        self.bands_RGB_mean = bands_mean['s2_mean'][0:3]
-        self.bands_RGB_std = bands_std['s2_std'][0:3]
-        
-        self.bands_all_mean = self.bands_s2_mean + self.bands_s1_mean
-        self.bands_all_std = self.bands_s2_std + self.bands_s1_std
-
-    def __call__(self, rt_sample):
-
-        img, label, sample_id = rt_sample['image'], rt_sample['label'], rt_sample['id']
-
-        # different input channels
-        if img.size()[0] == 12:
-            for t, m, s in zip(img, self.bands_all_mean, self.bands_all_std):
-                t.sub_(m).div_(s) 
-        elif img.size()[0] == 10:
-            for t, m, s in zip(img, self.bands_s2_mean, self.bands_s2_std):
-                t.sub_(m).div_(s)          
-        elif img.size()[0] == 5:
-            for t, m, s in zip(img, 
-                               self.bands_RGB_mean + self.bands_s1_mean,
-                               self.bands_RGB_std + self.bands_s1_std):
-                t.sub_(m).div_(s)                                
-        elif img.size()[0] == 3:
-            for t, m, s in zip(img, self.bands_RGB_mean, self.bands_RGB_std):
-                t.sub_(m).div_(s)
-        else:
-            for t, m, s in zip(img, self.bands_s1_mean, self.bands_s1_std):
-                t.sub_(m).div_(s)            
-        
-        return {'image':img, 'label':label, 'id':sample_id}
-
-class ToTensor(object):
-    """"""Convert ndarrays in sample to Tensors.""""""
-
-    def __call__(self, rt_sample):
-        
-        img, label, sample_id = rt_sample['image'], rt_sample['label'], rt_sample['id']
-        
-        rt_sample = {'image': torch.tensor(img), 'label':label, 'id':sample_id}
-        return rt_sample
-"""
