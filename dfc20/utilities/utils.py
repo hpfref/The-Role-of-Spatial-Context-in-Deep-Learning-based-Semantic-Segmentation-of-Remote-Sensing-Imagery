@@ -54,6 +54,20 @@ class ComboLoss(nn.Module):
         # Combine both losses
         return self.ce_weight * ce_loss + self.dice_weight * dice_loss
     
+class ComboLossFocal(nn.Module):
+    def __init__(self, weight=None, dice_weight=0.5, focal_weight=0.5, dice_smooth=1e-6,
+                 alpha=0.25, gamma=2.0):
+        super().__init__()
+        self.focal = FocalLoss(alpha=alpha, gamma=gamma, weight=weight, reduction='mean')
+        self.dice_loss = DiceLoss(weight=weight, smooth=dice_smooth)
+        self.dice_weight = dice_weight
+        self.focal_weight = focal_weight
+
+    def forward(self, inputs, targets):
+        focal_loss = self.focal(inputs, targets)
+        dice_loss = self.dice_loss(inputs, targets)
+        return self.focal_weight * focal_loss + self.dice_weight * dice_loss
+    
 class FocalLoss(nn.Module):
     def __init__(self, alpha=0.25, gamma=2.0, weight=None, reduction='mean'):
         """
@@ -173,141 +187,6 @@ class PolyLR(torch.optim.lr_scheduler._LRScheduler):
             for base_lr in self.base_lrs
         ]
     
-class StratifiedBatchSampler(Sampler):
-    def __init__(self, class_info_list, batch_size, num_batches=None, seed=42, mode="multi"):
-        """
-        Args:
-            class_info_list: list of lists of class IDs if mode="multi",
-                             or list of int class IDs if mode="majority"
-            mode: "multi" (multiple classes per image) or "majority" (single label per image)
-        """
-        self.class_info_list = class_info_list
-        self.batch_size = batch_size
-        self.num_samples = len(class_info_list)
-        self.num_batches = num_batches or (self.num_samples // batch_size)
-        self.seed = seed
-        self.mode = mode.lower()
-        random.seed(seed)
-
-        # Build class-to-indices map
-        self.class_to_indices = defaultdict(list)
-        if self.mode == "multi":
-            for idx, classes in enumerate(class_info_list):
-                for cls in classes:
-                    self.class_to_indices[cls].append(idx)
-            flat_classes = [c for clist in class_info_list for c in clist]
-        elif self.mode == "majority":
-            for idx, cls in enumerate(class_info_list):
-                self.class_to_indices[cls].append(idx)
-            flat_classes = class_info_list
-        else:
-            raise ValueError("mode must be either 'multi' or 'majority'")
-
-        # Count class frequencies and compute weights (inverse frequency)
-        self.class_counts = Counter(flat_classes)
-        self.class_weights = {cls: 1.0 / count for cls, count in self.class_counts.items()}
-
-        print(f"Class counts ({self.mode}): {self.class_counts}")
-
-    def __iter__(self):
-        all_indices = list(range(self.num_samples))
-        used_indices = set()
-        batches = []
-
-        for _ in range(self.num_batches):
-            batch = set()
-
-            # Sample classes, favoring rare ones
-            sorted_classes = sorted(self.class_weights.items(), key=lambda x: -x[1])
-            for cls, _ in sorted_classes:
-                random.shuffle(self.class_to_indices[cls])
-                for idx in self.class_to_indices[cls]:
-                    if idx not in used_indices:
-                        batch.add(idx)
-                    if len(batch) >= self.batch_size:
-                        break
-                if len(batch) >= self.batch_size:
-                    break
-
-            # Fill remaining spots if needed
-            if len(batch) < self.batch_size:
-                remaining = list(set(all_indices) - used_indices)
-                random.shuffle(remaining)
-                for idx in remaining:
-                    batch.add(idx)
-                    if len(batch) >= self.batch_size:
-                        break
-
-            used_indices.update(batch)
-            batches.append(list(batch))
-
-        return iter([i for batch in batches for i in batch])
-class MultiClassSampler(Sampler):
-    def __init__(self, class_info_list, batch_size, num_batches=None, seed=42):
-        """
-        Args:
-            class_info_list: list of lists of class IDs per sample (multi-label)
-            batch_size: number of samples per batch
-            num_batches: total number of batches to draw
-            seed: random seed for reproducibility
-        """
-        self.class_info_list = class_info_list
-        self.batch_size = batch_size
-        self.num_samples = len(class_info_list)
-        self.num_batches = num_batches or (self.num_samples // batch_size)
-        self.seed = seed
-        random.seed(seed)
-
-        # Build class-to-indices map
-        self.class_to_indices = defaultdict(list)
-        for idx, classes in enumerate(class_info_list):
-            for cls in classes:
-                self.class_to_indices[cls].append(idx)
-        flat_classes = [c for clist in class_info_list for c in clist]
-
-        # Count class frequencies and compute weights (inverse frequency)
-        self.class_counts = Counter(flat_classes)
-        self.class_weights = {cls: 1.0 / count for cls, count in self.class_counts.items()}
-
-        print(f"Class counts (multi): {self.class_counts}")
-
-    def __iter__(self):
-        all_indices = list(range(self.num_samples))
-        used_indices = set()
-        batches = []
-
-        for _ in range(self.num_batches):
-            batch = set()
-
-            # Sample classes, favoring rare ones
-            sorted_classes = sorted(self.class_weights.items(), key=lambda x: -x[1])
-            for cls, _ in sorted_classes:
-                random.shuffle(self.class_to_indices[cls])
-                for idx in self.class_to_indices[cls]:
-                    if idx not in used_indices:
-                        batch.add(idx)
-                    if len(batch) >= self.batch_size:
-                        break
-                if len(batch) >= self.batch_size:
-                    break
-
-            # Fill remaining spots if needed
-            if len(batch) < self.batch_size:
-                remaining = list(set(all_indices) - used_indices)
-                random.shuffle(remaining)
-                for idx in remaining:
-                    batch.add(idx)
-                    if len(batch) >= self.batch_size:
-                        break
-
-            used_indices.update(batch)
-            batches.append(list(batch))
-
-        return iter([i for batch in batches for i in batch])
-
-    def __len__(self):
-        return self.num_batches * self.batch_size
-
 
 class MajorityClassSampler(Sampler):
     def __init__(self, majority_classes, batch_size, min_samples_per_class=1, seed=42):
@@ -375,3 +254,26 @@ class MajorityClassSampler(Sampler):
 
     def __len__(self):
         return (self.num_samples + self.batch_size - 1) // self.batch_size
+    
+def oversample_indices(majority_classes, target_count_per_class=None, max_oversample_factor=10):
+    class_counts = Counter(majority_classes)
+    all_classes = list(class_counts.keys())
+
+    # Default: balance to the max class count
+    max_count = max(class_counts.values())
+    if target_count_per_class is None:
+        target_count_per_class = {cls: min(max_count, class_counts[cls] * max_oversample_factor)
+                                  for cls in all_classes}
+
+    new_indices = []
+    class_to_indices = defaultdict(list)
+    for idx, cls in enumerate(majority_classes):
+        class_to_indices[cls].append(idx)
+
+    for cls in all_classes:
+        indices = class_to_indices[cls]
+        repeat_factor = target_count_per_class[cls] // len(indices)
+        remainder = target_count_per_class[cls] % len(indices)
+        new_indices.extend(indices * repeat_factor + random.sample(indices, remainder))
+
+    return new_indices
