@@ -28,7 +28,7 @@ class BottleneckEncoder(nn.Module):
         return self.encoder(x)[-1]  # Just x3
     
 class AutoSizedMajorityClassifier(nn.Module):
-    def __init__(self, encoder, feature_level, num_classes, target_head_params=10000):
+    def __init__(self, encoder, feature_level, num_classes=8, target_head_params=1000):
         """
         Args:
             encoder: feature extractor (returns list of features)

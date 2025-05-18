@@ -9,17 +9,16 @@ from decoder import DecoderSmall, DecoderBig, DecoderHuge
 
 
 class UNetSmall(nn.Module):
-    def __init__(self, n_channels, bilinear=True):
+    def __init__(self, n_channels, bilinear=True): # bilinear?
         super(UNetSmall, self).__init__()
         self.encoder = EncoderSmall(n_channels)  
         self.decoder = DecoderSmall(bilinear)   
 
     def forward(self, x):
-        #x1, x2, x3, x4 = self.encoder(x)
-        #logits = self.decoder(x1, x2, x3, x4)
         x1, x2, x3 = self.encoder(x)
         logits = self.decoder(x1, x2, x3)
         return logits
+    
 
 class UNetBig(nn.Module):
     def __init__(self, n_channels, bilinear=True):
