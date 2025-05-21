@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import torch
+import torchvision.transforms as T
 import time
 import json
 
@@ -34,6 +35,20 @@ DFC20_LABEL_MAP = {
 
 S2_TRAIN_MEAN = np.load("utilities/s2_train_mean.npy")  # shape (13,)
 S2_TRAIN_STD  = np.load("utilities/s2_train_std.npy")   # shape (13,)
+
+# util function for reading s1 data
+def load_s1(path):
+    with rasterio.open(path) as data:
+        s1 = data.read([1, 2])  # VV = band 1, VH = band 2
+
+    s1 = s1.astype(np.float32)
+    s1 = np.nan_to_num(s1)
+
+    # default to normalization 
+    s1 = np.clip(s1, -25, 0)
+    s1 = (s1 + 25) / 25
+
+    return s1
 
 # util function for reading s2 data
 def load_s2(path, use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr, normalize, standardize):
@@ -86,7 +101,7 @@ def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr,
     # load s1/s2
     #t0 = time.time()
     if use_s1:
-        img = None
+        img = load_s1(sample["s1"])
         #times['load_s1s2'] = 0
     elif use_s2:
         img = load_s2(sample["s2"], use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr, normalize, standardize)
@@ -136,7 +151,7 @@ class DFC20(data.Dataset):
     #       -
 
     def __init__(self, path, subset="train", use_s1=False, use_s2_RGB=False, use_s2_hr=False, use_s2_all=False, use_s2_hr_mr=False, as_tensor=False, 
-                 normalize=False, standardize=False, augment=None, in_memory=False):
+                 normalize=False, standardize=False, augment=None, add_blur_channels=False, blur_kernel=10.0, in_memory=False):
         """Initialize the dataset"""
 
         # inizialize
@@ -156,12 +171,14 @@ class DFC20(data.Dataset):
         self.normalize = normalize
         self.standardize = standardize
         self.augment = augment
+        self.add_blur_channels = add_blur_channels
+        self.blur_kernel = blur_kernel
 
         self.in_memory = in_memory
         assert subset in ["train", "val", "test"]
         
         # provide number of input channels
-        self.n_inputs = get_ninputs(use_s1, use_s2_RGB, use_s2_hr, use_s2_hr_mr, use_s2_all)
+        self.n_inputs = get_ninputs(use_s1, use_s2_RGB, use_s2_hr, use_s2_hr_mr, use_s2_all) # excluding blur channels
 
         # make sure parent dir exists
         assert os.path.exists(path)
@@ -272,7 +289,13 @@ class DFC20(data.Dataset):
             image = torch.tensor(image)
             label = torch.tensor(label, dtype=torch.long)
             majority_class = torch.tensor(majority_class, dtype=torch.long)
-        
+
+            # add blurr channels
+            if self.add_blur_channels:
+                blur = T.GaussianBlur(kernel_size=self.blur_kernel, sigma=(self.blur_kernel - 1) / 6)
+                blurred = blur(image)
+                image = torch.cat([image, blurred], dim=0) # should always be torch at this point
+            
         return {'image': image, 'label': label, 'id': sample["id"], 'majority_class': majority_class}
 
 

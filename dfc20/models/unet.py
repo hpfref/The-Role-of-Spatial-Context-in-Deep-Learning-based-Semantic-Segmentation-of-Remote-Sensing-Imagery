@@ -4,12 +4,12 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from encoder import EncoderSmall, EncoderBig, EncoderHuge
-from decoder import DecoderSmall, DecoderBig, DecoderHuge
+from encoder import *
+from decoder import *
 
 
 class UNetSmall(nn.Module):
-    def __init__(self, n_channels, bilinear=True): # bilinear?
+    def __init__(self, n_channels, bilinear=True): 
         super(UNetSmall, self).__init__()
         self.encoder = EncoderSmall(n_channels)  
         self.decoder = DecoderSmall(bilinear)   
@@ -18,7 +18,39 @@ class UNetSmall(nn.Module):
         x1, x2, x3 = self.encoder(x)
         logits = self.decoder(x1, x2, x3)
         return logits
+
+class UNetSmall1x1(nn.Module):
+    def __init__(self, n_channels, bilinear=True): 
+        super(UNetSmall1x1, self).__init__()
+        self.encoder = EncoderSmall1x1(n_channels)  
+        self.decoder = DecoderSmall1x1(bilinear)   
+
+    def forward(self, x):
+        x1, x2, x3 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3)
+        return logits
+
+class UNetSmall7x7(nn.Module):
+    def __init__(self, n_channels, bilinear=True): 
+        super(UNetSmall7x7, self).__init__()
+        self.encoder = EncoderSmall7x7(n_channels)  
+        self.decoder = DecoderSmall7x7(bilinear)   
+
+    def forward(self, x):
+        x1, x2, x3 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3)
+        return logits
     
+class UNetSmallDynamic(nn.Module):
+    def __init__(self, n_channels, kernel_size=3, bilinear=True): 
+        super(UNetSmallDynamic, self).__init__()
+        self.encoder = EncoderSmallDynamic(n_channels, kernel_size=kernel_size)  
+        self.decoder = DecoderSmallDynamic(self.encoder.out_channels, bilinear=bilinear, kernel_size=kernel_size)   
+
+    def forward(self, x):
+        x1, x2, x3 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3)
+        return logits
 
 class UNetBig(nn.Module):
     def __init__(self, n_channels, bilinear=True):

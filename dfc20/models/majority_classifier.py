@@ -3,29 +3,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class MajorityClassifier(nn.Module):
-    def __init__(self, encoder, bottleneck_channels, num_classes):
+class DummyEncoder(nn.Module):
+    def __init__(self):
         super().__init__()
-        self.encoder = encoder
-        self.classifier = nn.Sequential(
-            nn.Conv2d(bottleneck_channels, num_classes, kernel_size=1),
-            nn.AdaptiveAvgPool2d(1),  # (B, num_classes, 1, 1)
-            nn.Flatten(),             # (B, num_classes)
-            nn.Softmax(dim=1)         # Probabilities over classes
-        )
 
     def forward(self, x):
-        with torch.no_grad():  # Freeze encoder unless fine-tuning
-            x = self.encoder(x)
-        return self.classifier(x)
-    
-class BottleneckEncoder(nn.Module):
-    def __init__(self, encoder):
-        super().__init__()
-        self.encoder = encoder
-
-    def forward(self, x):
-        return self.encoder(x)[-1]  # Just x3
+        # Return input as a single-element list to match expected output format
+        return [x]
     
 class AutoSizedMajorityClassifier(nn.Module):
     def __init__(self, encoder, feature_level, num_classes=8, target_head_params=1000):
@@ -43,7 +27,7 @@ class AutoSizedMajorityClassifier(nn.Module):
 
         # Get input channels from desired encoder output
         with torch.no_grad():
-            dummy_input = torch.randn(1, 4, 256, 256)  # adapt input shape if needed
+            dummy_input = torch.randn(1, 4, 256, 256)  
             features = self.encoder(dummy_input)
             selected_feature = features[feature_level]
             in_channels = selected_feature.shape[1]
