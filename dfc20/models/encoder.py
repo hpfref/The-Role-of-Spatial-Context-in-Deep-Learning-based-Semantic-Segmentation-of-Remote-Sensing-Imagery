@@ -41,67 +41,8 @@ class Down(nn.Module):
         return self.maxpool_conv(x)
 
 
-class EncoderSmall(nn.Module):
-    def __init__(self, in_channels, kernel_size=3):
-        super().__init__()
-        self.inc = DoubleConv(in_channels, 32, kernel_size)
-        self.down1 = Down(32, 64, kernel_size)
-        self.down2 = Down(64, 128, kernel_size)
 
-    def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        return x1, x2, x3
-
-class EncoderSmall1x1(nn.Module):
-    def __init__(self, in_channels, kernel_size=1):
-        super().__init__()
-        self.inc = DoubleConv(in_channels, 95, kernel_size) #95 190 380 channels für gleiche param count, aber performance schlechter
-        self.down1 = Down(95, 190, kernel_size) 
-        self.down2 = Down(190, 380, kernel_size)
-
-    def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        return x1, x2, x3
-
-class EncoderSmall7x7(nn.Module):
-    def __init__(self, in_channels, kernel_size=7):
-        super().__init__()
-        self.inc = DoubleConv(in_channels, 14, kernel_size)
-        self.down1 = Down(14, 28, kernel_size)
-        self.down2 = Down(28, 56, kernel_size)
-
-    def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        return x1, x2, x3
     
-class EncoderSmallDynamic(nn.Module):
-    def __init__(self, in_channels, kernel_size=3):
-        super().__init__()
-        base = 32
-        ch1 = adjusted_out_channels(base, 3, kernel_size)
-        ch2 = adjusted_out_channels(ch1 * 2, 3, kernel_size)
-        ch3 = adjusted_out_channels(ch2 * 2, 3, kernel_size)
-
-        self.inc = DoubleConv(in_channels, ch1, kernel_size)
-        self.down1 = Down(ch1, ch2, kernel_size)
-        self.down2 = Down(ch2, ch3, kernel_size)
-
-    def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        return x1, x2, x3
-    
-def adjusted_out_channels(base_channels, old_kernel, new_kernel):
-    scale = (old_kernel ** 2) / (new_kernel ** 2)
-    return int(base_channels * scale)
-
 
 class EncoderBig(nn.Module):
     def __init__(self, in_channels):
@@ -139,3 +80,59 @@ class EncoderHuge(nn.Module):
         x6 = self.down5(x5)
         return x1, x2, x3, x4, x5, x6
     
+
+
+
+### old ###
+
+class EncoderSmall(nn.Module):
+    def __init__(self, in_channels, kernel_size=3):
+        super().__init__()
+        self.inc = DoubleConv(in_channels, 32, kernel_size)
+        self.down1 = Down(32, 64, kernel_size)
+        self.down2 = Down(64, 128, kernel_size)
+
+    def forward(self, x):
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        return x1, x2, x3
+
+class EncoderSmall1x1(nn.Module):
+    def __init__(self, in_channels, kernel_size=1):
+        super().__init__()
+        self.inc = DoubleConv(in_channels, 95, kernel_size) 
+        self.down1 = Down(95, 190, kernel_size) 
+        self.down2 = Down(190, 380, kernel_size)
+
+    def forward(self, x):
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        return x1, x2, x3
+
+class EncoderSmall7x7(nn.Module):
+    def __init__(self, in_channels, kernel_size=7):
+        super().__init__()
+        self.inc = DoubleConv(in_channels, 14, kernel_size)
+        self.down1 = Down(14, 28, kernel_size)
+        self.down2 = Down(28, 56, kernel_size)
+
+    def forward(self, x):
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        return x1, x2, x3
+
+class EncoderSmall11x11(nn.Module):
+    def __init__(self, in_channels, kernel_size=11):
+        super().__init__()
+        self.inc = DoubleConv(in_channels, 9, kernel_size)
+        self.down1 = Down(9, 18, kernel_size)
+        self.down2 = Down(18, 36, kernel_size)
+
+    def forward(self, x):
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        return x1, x2, x3

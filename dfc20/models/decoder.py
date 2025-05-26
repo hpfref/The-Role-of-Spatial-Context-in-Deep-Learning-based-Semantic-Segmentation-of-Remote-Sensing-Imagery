@@ -59,7 +59,44 @@ class OutConv(nn.Module):
         return self.conv(x)
 
 
+class DecoderBig(nn.Module):
+    def __init__(self, bilinear=True):
+        super().__init__()
+        self.up1 = Up(512, 512, 256, bilinear, apply_dropout=False)
+        self.up2 = Up(256, 256, 128, bilinear, apply_dropout=False)
+        self.up3 = Up(128, 128, 64, bilinear)                       
+        self.up4 = Up(64, 64, 64, bilinear)                      
+        self.outc = OutConv(64, 8)
 
+    def forward(self, x1, x2, x3, x4, x5):
+        x = self.up1(x5, x4)
+        x = self.up2(x, x3)
+        x = self.up3(x, x2)
+        x = self.up4(x, x1)
+        x = self.outc(x)
+        return x
+    
+class DecoderHuge(nn.Module):
+    def __init__(self, bilinear=True):
+        super().__init__()
+        self.up1 = Up(2048, 512, bilinear, apply_dropout=False)
+        self.up2 = Up(1024, 256, bilinear, apply_dropout=False)
+        self.up3 = Up(512, 128, bilinear, apply_dropout=False)
+        self.up4 = Up(256, 64, bilinear)                       
+        self.up5 = Up(128, 64, bilinear)                      
+        self.outc = OutConv(64, 8)
+
+    def forward(self, x1, x2, x3, x4, x5, x6):
+        x = self.up1(x6, x5)
+        x = self.up2(x, x4)
+        x = self.up3(x, x3)
+        x = self.up4(x, x2)
+        x = self.up5(x, x1)
+        x = self.outc(x)
+        return x
+
+
+### old ###
 
 class DecoderSmall(nn.Module):
     def __init__(self, bilinear=True):
@@ -99,61 +136,17 @@ class DecoderSmall7x7(nn.Module):
         x = self.up2(x, x1)
         x = self.outc(x)
         return x
-class DecoderSmallDynamic(nn.Module):
-    def __init__(self, kernel_size=3, bilinear=True):
-        super().__init__()
-        base = 32
-        ch1 = adjusted_out_channels(base, 3, kernel_size)
-        ch2 = adjusted_out_channels(ch1 * 2, 3, kernel_size)
-        ch3 = adjusted_out_channels(ch2 * 2, 3, kernel_size)
 
-        self.up1 = Up(x1_channels=ch3, x2_channels=ch2, out_channels=ch2, bilinear=bilinear, kernel_size=kernel_size)
-        self.up2 = Up(x1_channels=ch2, x2_channels=ch1, out_channels=ch1, bilinear=bilinear, kernel_size=kernel_size)
-        self.outc = OutConv(ch1, 8)
+class DecoderSmall11x11(nn.Module):
+    def __init__(self, bilinear=True, kernel_size=11):
+        super().__init__()
+        self.up1 = Up(36, 18, 18, bilinear, kernel_size=kernel_size)
+        self.up2 = Up(18, 9, 9, bilinear, kernel_size=kernel_size)
+        self.outc = OutConv(9, 8)
 
     def forward(self, x1, x2, x3):
         x = self.up1(x3, x2)
         x = self.up2(x, x1)
         x = self.outc(x)
         return x
-
-def adjusted_out_channels(base_channels, old_kernel, new_kernel):
-    scale = (old_kernel ** 2) / (new_kernel ** 2)
-    return int(base_channels * scale)
-
-
-class DecoderBig(nn.Module):
-    def __init__(self, bilinear=True):
-        super().__init__()
-        self.up1 = Up(512, 512, 256, bilinear, apply_dropout=False)
-        self.up2 = Up(256, 256, 128, bilinear, apply_dropout=False)
-        self.up3 = Up(128, 128, 64, bilinear)                       
-        self.up4 = Up(64, 64, 64, bilinear)                      
-        self.outc = OutConv(64, 8)
-
-    def forward(self, x1, x2, x3, x4, x5):
-        x = self.up1(x5, x4)
-        x = self.up2(x, x3)
-        x = self.up3(x, x2)
-        x = self.up4(x, x1)
-        x = self.outc(x)
-        return x
     
-class DecoderHuge(nn.Module):
-    def __init__(self, bilinear=True):
-        super().__init__()
-        self.up1 = Up(2048, 512, bilinear, apply_dropout=False)
-        self.up2 = Up(1024, 256, bilinear, apply_dropout=False)
-        self.up3 = Up(512, 128, bilinear, apply_dropout=False)
-        self.up4 = Up(256, 64, bilinear)                       
-        self.up5 = Up(128, 64, bilinear)                      
-        self.outc = OutConv(64, 8)
-
-    def forward(self, x1, x2, x3, x4, x5, x6):
-        x = self.up1(x6, x5)
-        x = self.up2(x, x4)
-        x = self.up3(x, x3)
-        x = self.up4(x, x2)
-        x = self.up5(x, x1)
-        x = self.outc(x)
-        return x

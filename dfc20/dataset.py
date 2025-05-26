@@ -51,13 +51,15 @@ def load_s1(path):
     return s1
 
 # util function for reading s2 data
-def load_s2(path, use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr, normalize, standardize):
+def load_s2(path, use_s2_RGB, use_s2_hr, use_s2_hr_mr, use_s2_all, normalize, standardize):
     # band selection 
     bands=[]
     if use_s2_RGB: bands = S2_BANDS_RGB
     elif use_s2_hr: bands = S2_BANDS_HR
-    elif use_s2_all : bands = S2_BANDS_ALL
+    elif use_s2_all: bands = S2_BANDS_ALL
     elif use_s2_hr_mr: bands = S2_BANDS_HR + S2_BANDS_MR
+
+    #print(f"Loading S2 bands: {bands}")
 
     with rasterio.open(path) as data:
         s2 = data.read(bands)
@@ -92,7 +94,7 @@ def load_dfc(path):
     return dfc
 
 # util function for reading data from single sample
-def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr, normalize, standardize):
+def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_hr_mr, use_s2_all, normalize, standardize):
     #total_start = time.time()
     #times = {}
 
@@ -104,7 +106,7 @@ def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr,
         img = load_s1(sample["s1"])
         #times['load_s1s2'] = 0
     elif use_s2:
-        img = load_s2(sample["s2"], use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr, normalize, standardize)
+        img = load_s2(sample["s2"], use_s2_RGB, use_s2_hr, use_s2_hr_mr, use_s2_all, normalize, standardize)
         #times['load_s1s2'] = time.time() - t0
     else:
       img = None
@@ -116,7 +118,7 @@ def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr,
 
     # remap labels
     #t2 = time.time()
-    dfc = np.vectorize(DFC20_LABEL_MAP.get)(dfc).astype(np.float32)
+    dfc = np.vectorize(DFC20_LABEL_MAP.get)(dfc).astype(np.float32) 
     #times['remap'] = time.time() - t2
 
     #total_time = time.time() - total_start
@@ -126,7 +128,7 @@ def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr,
 
 
 #  calculate number of input channels  
-def get_ninputs(use_s1, use_s2_RGB, use_s2_hr, use_s2_all, use_s2_hr_mr):
+def get_ninputs(use_s1, use_s2_RGB, use_s2_hr, use_s2_hr_mr, use_s2_all):
     n_inputs = 0
     if use_s2_hr:
         n_inputs = len(S2_BANDS_HR)
@@ -200,50 +202,38 @@ class DFC20(data.Dataset):
             7: ("Water", "#1c0dff")
         }
 
-        # Class Frequencies
+        # Class Frequencies (according to DFC20 paper)
         self.freq = np.array([23.1, 6.0, 11.6, 7.0, 17.0, 11.0, 2.3, 22.0])
 
-        # get samples
+        # Load full metadata with all patches info
+        with open("utilities/patch_metadata.json", "r") as f:
+            all_metadata = json.load(f)
+
+        # Load split IDs JSON (list of patch IDs for this split)
+        split_ids_path = os.path.join("utilities", f"{subset}_ids.json")
+        with open(split_ids_path, "r") as f:
+            split_ids = set(json.load(f))  # convert to set for faster lookup
+
+        # Filter metadata for the current split based on IDs
+        filtered_metadata = [m for m in all_metadata if m["id"] in split_ids]
+
         self.samples = []
+        self.image_majority_class = []
 
-        if subset == "train":
-            sample_dir = os.path.join(path, "train")
-            with open("utilities/train_majority_class_per_image.json", "r") as f:
-                self.image_majority_class = json.load(f)
-        elif subset == "val":
-            sample_dir = os.path.join(path, "val")
-            with open("utilities/val_majority_class_per_image.json", "r") as f:
-                self.image_majority_class = json.load(f)
-        else:
-            sample_dir = os.path.join(path, "test")
-            with open("utilities/test_majority_class_per_image.json", "r") as f:
-                self.image_majority_class = json.load(f)
+        for meta in filtered_metadata:
+            if not (os.path.exists(meta["path_s1"]) and os.path.exists(meta["path_s2"]) and os.path.exists(meta["path_dfc"])):
+                print(f"[!] Missing files for sample {meta['id']}, skipping")
+                continue
 
-        # Get all s2 patches in the corresponding subset (train/val/test)
-        s2_files = glob.glob(os.path.join(sample_dir, "s2", "*.tif"))
+            self.samples.append({
+                "s1": meta["path_s1"],
+                "s2": meta["path_s2"],
+                "dfc": meta["path_dfc"],
+                "id": meta["id"]
+            })
+            self.image_majority_class.append(meta["majority_class"])
 
-        # Set up progress bar for loading samples
-        pbar = tqdm(total=len(s2_files), desc="[Load]")
-
-        # Loop over the list of s2 files and find corresponding s1 & dfc files
-        for s2_loc in s2_files:
-            # Extract the sample ID from the filename
-            s2_id = os.path.basename(s2_loc)
-            #mini_name = s2_id.split("_")
-
-            # Build paths for s1 and dfc based on s2_id
-            s1_loc = s2_loc.replace("s2", "s1")
-            dfc_loc = s2_loc.replace("s2", "dfc")
-
-            pbar.update()
-
-            # Append the sample info to the samples list
-            self.samples.append({"s1": s1_loc, "s2": s2_loc, "dfc": dfc_loc, "id": s2_id})
-
-        pbar.close()
-
-        # sort list of samples
-        self.samples = sorted(self.samples, key=lambda i: i['id'])
+        self.samples = sorted(self.samples, key=lambda x: x["id"])
 
         # Preload the data into memory
         if self.in_memory:
