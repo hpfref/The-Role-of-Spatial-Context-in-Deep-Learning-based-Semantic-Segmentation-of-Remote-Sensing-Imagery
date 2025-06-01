@@ -9,11 +9,11 @@ from decoder import *
 
 
     
-class UNetBig(nn.Module):
+class UNetBase(nn.Module):
     def __init__(self, n_channels, bilinear=True):
-        super(UNetBig, self).__init__()
-        self.encoder = EncoderBig(n_channels)
-        self.decoder = DecoderBig(bilinear)
+        super(UNetBase, self).__init__()
+        self.encoder = EncoderBase(n_channels)
+        self.decoder = DecoderBase(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5 = self.encoder(x)
@@ -22,11 +22,34 @@ class UNetBig(nn.Module):
         #print(f"Decoder output shape: {logits.shape}") 
         return logits
     
-class UNetHuge(nn.Module):
+class UNet1x1(nn.Module):
     def __init__(self, n_channels, bilinear=True):
-        super(UNetHuge, self).__init__()
-        self.encoder = EncoderHuge(n_channels)
-        self.decoder = DecoderHuge(bilinear)
+        super(UNet1x1, self).__init__()
+        self.encoder = Encoder1x1(n_channels)
+        self.decoder = Decoder1x1(bilinear)
+
+    def forward(self, x):
+        x1, x2, x3, x4, x5 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3, x4, x5)
+        return logits
+
+class UNet7x7(nn.Module):
+    def __init__(self, n_channels, bilinear=True):
+        super(UNet7x7, self).__init__()
+        self.encoder = Encoder7x7(n_channels)
+        self.decoder = Decoder7x7(bilinear)
+
+    def forward(self, x):
+        x1, x2, x3, x4, x5 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3, x4, x5)
+        return logits
+########## OLD ##########
+
+class UNetBig(nn.Module):
+    def __init__(self, n_channels, bilinear=True):
+        super(UNetBig, self).__init__()
+        self.encoder = EncoderBig(n_channels)
+        self.decoder = DecoderBig(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5, x6 = self.encoder(x)
@@ -34,9 +57,6 @@ class UNetHuge(nn.Module):
         logits = self.decoder(x1, x2, x3, x4, x5, x6)
         #print(f"Decoder output shape: {logits.shape}") 
         return logits
-
-
-## old
 class UNetSmall(nn.Module):
     def __init__(self, n_channels, bilinear=True): 
         super(UNetSmall, self).__init__()
