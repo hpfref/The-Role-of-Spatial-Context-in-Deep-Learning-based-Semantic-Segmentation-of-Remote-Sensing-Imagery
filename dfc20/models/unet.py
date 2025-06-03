@@ -12,8 +12,8 @@ from decoder import *
 class UNetBase(nn.Module):
     def __init__(self, n_channels, bilinear=True):
         super(UNetBase, self).__init__()
-        self.encoder = EncoderBase(n_channels)
-        self.decoder = DecoderBase(bilinear)
+        self.encoder = EncoderBase2(n_channels)
+        self.decoder = DecoderBase2(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5 = self.encoder(x)
@@ -25,8 +25,19 @@ class UNetBase(nn.Module):
 class UNet1x1(nn.Module):
     def __init__(self, n_channels, bilinear=True):
         super(UNet1x1, self).__init__()
-        self.encoder = Encoder1x1(n_channels)
-        self.decoder = Decoder1x1(bilinear)
+        self.encoder = Encoder1x1_2(n_channels)
+        self.decoder = Decoder1x1_2(bilinear)
+
+    def forward(self, x):
+        x1, x2, x3, x4, x5 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3, x4, x5)
+        return logits
+
+class UNet1x1EqualParams(nn.Module):
+    def __init__(self, n_channels, bilinear=True):
+        super(UNet1x1EqualParams, self).__init__()
+        self.encoder = Encoder1x1EqualParams_2(n_channels)
+        self.decoder = Decoder1x1EqualParams_2(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5 = self.encoder(x)
@@ -36,8 +47,19 @@ class UNet1x1(nn.Module):
 class UNet7x7(nn.Module):
     def __init__(self, n_channels, bilinear=True):
         super(UNet7x7, self).__init__()
-        self.encoder = Encoder7x7(n_channels)
-        self.decoder = Decoder7x7(bilinear)
+        self.encoder = Encoder7x7_2(n_channels)
+        self.decoder = Decoder7x7_2(bilinear)
+
+    def forward(self, x):
+        x1, x2, x3, x4, x5 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3, x4, x5)
+        return logits
+
+class UNet7x7EqualParams(nn.Module):
+    def __init__(self, n_channels, bilinear=True):
+        super(UNet7x7EqualParams, self).__init__()
+        self.encoder = Encoder7x7EqualParams_2(n_channels)
+        self.decoder = Decoder7x7EqualParams_2(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5 = self.encoder(x)
