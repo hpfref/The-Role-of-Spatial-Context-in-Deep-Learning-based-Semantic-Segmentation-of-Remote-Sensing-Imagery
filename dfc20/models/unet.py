@@ -7,13 +7,11 @@ import torch.nn.functional as F
 from encoder import *
 from decoder import *
 
-
-    
-class UNetBase(nn.Module):
+class UNetBest(nn.Module):
     def __init__(self, n_channels, bilinear=True):
-        super(UNetBase, self).__init__()
-        self.encoder = EncoderBase2(n_channels)
-        self.decoder = DecoderBase2(bilinear)
+        super(UNetBest, self).__init__()
+        self.encoder = EncoderBest(n_channels)
+        self.decoder = DecoderBest(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5 = self.encoder(x)
@@ -22,11 +20,22 @@ class UNetBase(nn.Module):
         #print(f"Decoder output shape: {logits.shape}") 
         return logits
     
+class UNetBase(nn.Module):
+    def __init__(self, n_channels, bilinear=True):
+        super(UNetBase, self).__init__()
+        self.encoder = EncoderBase(n_channels)
+        self.decoder = DecoderBase(bilinear)
+
+    def forward(self, x):
+        x1, x2, x3, x4, x5 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3, x4, x5)
+        return logits
+    
 class UNet1x1(nn.Module):
     def __init__(self, n_channels, bilinear=True):
         super(UNet1x1, self).__init__()
-        self.encoder = Encoder1x1_2(n_channels)
-        self.decoder = Decoder1x1_2(bilinear)
+        self.encoder = Encoder1x1(n_channels)
+        self.decoder = Decoder1x1(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5 = self.encoder(x)
@@ -36,19 +45,39 @@ class UNet1x1(nn.Module):
 class UNet1x1EqualParams(nn.Module):
     def __init__(self, n_channels, bilinear=True):
         super(UNet1x1EqualParams, self).__init__()
-        self.encoder = Encoder1x1EqualParams_2(n_channels)
-        self.decoder = Decoder1x1EqualParams_2(bilinear)
+        self.encoder = Encoder1x1EqualParams(n_channels)
+        self.decoder = Decoder1x1EqualParams(bilinear)
+
+    def forward(self, x):
+        x1, x2, x3, x4, x5 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3, x4, x5)
+        return logits
+class UNet5x5(nn.Module):
+    def __init__(self, n_channels, bilinear=True):
+        super(UNet5x5, self).__init__()
+        self.encoder = Encoder5x5(n_channels)
+        self.decoder = Decoder5x5(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5 = self.encoder(x)
         logits = self.decoder(x1, x2, x3, x4, x5)
         return logits
 
+class UNet5x5EqualParams(nn.Module):
+    def __init__(self, n_channels, bilinear=True):
+        super(UNet5x5EqualParams, self).__init__()
+        self.encoder = Encoder5x5EqualParams(n_channels)
+        self.decoder = Decoder5x5EqualParams(bilinear)
+
+    def forward(self, x):
+        x1, x2, x3, x4, x5 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3, x4, x5)
+        return logits
 class UNet7x7(nn.Module):
     def __init__(self, n_channels, bilinear=True):
         super(UNet7x7, self).__init__()
-        self.encoder = Encoder7x7_2(n_channels)
-        self.decoder = Decoder7x7_2(bilinear)
+        self.encoder = Encoder7x7(n_channels)
+        self.decoder = Decoder7x7(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5 = self.encoder(x)
@@ -58,13 +87,16 @@ class UNet7x7(nn.Module):
 class UNet7x7EqualParams(nn.Module):
     def __init__(self, n_channels, bilinear=True):
         super(UNet7x7EqualParams, self).__init__()
-        self.encoder = Encoder7x7EqualParams_2(n_channels)
-        self.decoder = Decoder7x7EqualParams_2(bilinear)
+        self.encoder = Encoder7x7EqualParams(n_channels)
+        self.decoder = Decoder7x7EqualParams(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5 = self.encoder(x)
         logits = self.decoder(x1, x2, x3, x4, x5)
         return logits
+    
+
+    
 ########## OLD ##########
 
 class UNetBig(nn.Module):
@@ -90,39 +122,6 @@ class UNetSmall(nn.Module):
         logits = self.decoder(x1, x2, x3)
         return logits
 
-class UNetSmall1x1(nn.Module):
-    def __init__(self, n_channels, bilinear=True): 
-        super(UNetSmall1x1, self).__init__()
-        self.encoder = EncoderSmall1x1(n_channels)  
-        self.decoder = DecoderSmall1x1(bilinear)   
-
-    def forward(self, x):
-        x1, x2, x3 = self.encoder(x)
-        logits = self.decoder(x1, x2, x3)
-        return logits
-
-class UNetSmall7x7(nn.Module):
-    def __init__(self, n_channels, bilinear=True): 
-        super(UNetSmall7x7, self).__init__()
-        self.encoder = EncoderSmall7x7(n_channels)  
-        self.decoder = DecoderSmall7x7(bilinear)   
-
-    def forward(self, x):
-        x1, x2, x3 = self.encoder(x)
-        logits = self.decoder(x1, x2, x3)
-        return logits
-
-class UNetSmall11x11(nn.Module):
-    def __init__(self, n_channels, bilinear=True): 
-        super(UNetSmall11x11, self).__init__()
-        self.encoder = EncoderSmall11x11(n_channels)  
-        self.decoder = DecoderSmall11x11(bilinear)   
-
-    def forward(self, x):
-        x1, x2, x3 = self.encoder(x)
-        logits = self.decoder(x1, x2, x3)
-        return logits
-    
 # Example usage:
 if __name__ == "__main__":
     model = UNetBig(n_channels=3)

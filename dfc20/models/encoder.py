@@ -41,25 +41,9 @@ class Down(nn.Module):
         return self.maxpool_conv(x)
 
 
+
     
 class EncoderBase(nn.Module):
-    def __init__(self, in_channels):
-        super().__init__()
-        self.inc = DoubleConv(in_channels, 32)                       
-        self.down1 = Down(32, 64)                                    
-        self.down2 = Down(64, 128)                                 
-        self.down3 = Down(128, 256, apply_dropout=False)             
-        self.down4 = Down(256, 256, apply_dropout=False)             
-
-    def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5 = self.down4(x4)
-        return x1, x2, x3, x4, x5
-    
-class EncoderBase2(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
         self.inc = DoubleConv(in_channels, 16)                       
@@ -76,24 +60,8 @@ class EncoderBase2(nn.Module):
         x5 = self.down4(x4)
         return x1, x2, x3, x4, x5
 
+    
 class Encoder1x1(nn.Module):
-    def __init__(self, in_channels):
-        super().__init__()
-        self.inc = DoubleConv(in_channels, 32, kernel_size=1)                       
-        self.down1 = Down(32, 64, kernel_size=1)                                    
-        self.down2 = Down(64, 128, kernel_size=1)                                 
-        self.down3 = Down(128, 256, apply_dropout=False, kernel_size=1)             
-        self.down4 = Down(256, 256, apply_dropout=False, kernel_size=1)             
-
-    def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5 = self.down4(x4)
-        return x1, x2, x3, x4, x5
-
-class Encoder1x1_2(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
         self.inc = DoubleConv(in_channels, 16, kernel_size=1)                       
@@ -110,7 +78,7 @@ class Encoder1x1_2(nn.Module):
         x5 = self.down4(x4)
         return x1, x2, x3, x4, x5
     
-class Encoder1x1EqualParams_2(nn.Module):
+class Encoder1x1EqualParams(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
         self.inc = DoubleConv(in_channels, 48, kernel_size=1)                       
@@ -126,15 +94,32 @@ class Encoder1x1EqualParams_2(nn.Module):
         x4 = self.down3(x3)
         x5 = self.down4(x4)
         return x1, x2, x3, x4, x5
-    
-class Encoder7x7(nn.Module):
+
+class Encoder5x5(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
-        self.inc = DoubleConv(in_channels, 32, kernel_size=7)                       
-        self.down1 = Down(32, 64, kernel_size=7)                                    
-        self.down2 = Down(64, 128, kernel_size=7)                                 
-        self.down3 = Down(128, 256, apply_dropout=False, kernel_size=7)             
-        self.down4 = Down(256, 256, apply_dropout=False, kernel_size=7)              
+        self.inc = DoubleConv(in_channels, 16, kernel_size=5)                       
+        self.down1 = Down(16, 32, kernel_size=5)                                    
+        self.down2 = Down(32, 64, kernel_size=5)                                 
+        self.down3 = Down(64, 128, apply_dropout=False, kernel_size=5)             
+        self.down4 = Down(128, 128, apply_dropout=False, kernel_size=5)              
+
+    def forward(self, x):
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+        return x1, x2, x3, x4, x5
+    
+class Encoder5x5EqualParams(nn.Module):
+    def __init__(self, in_channels):
+        super().__init__()
+        self.inc = DoubleConv(in_channels, 7, kernel_size=5)                       
+        self.down1 = Down(7, 14, kernel_size=5)                                    
+        self.down2 = Down(14, 28, kernel_size=5)                                 
+        self.down3 = Down(28, 56, apply_dropout=False, kernel_size=5)             
+        self.down4 = Down(56, 56, apply_dropout=False, kernel_size=5)              
 
     def forward(self, x):
         x1 = self.inc(x)
@@ -144,7 +129,7 @@ class Encoder7x7(nn.Module):
         x5 = self.down4(x4)
         return x1, x2, x3, x4, x5
 
-class Encoder7x7_2(nn.Module):
+class Encoder7x7(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
         self.inc = DoubleConv(in_channels, 16, kernel_size=7)                       
@@ -161,7 +146,7 @@ class Encoder7x7_2(nn.Module):
         x5 = self.down4(x4)
         return x1, x2, x3, x4, x5
     
-class Encoder7x7EqualParams_2(nn.Module):
+class Encoder7x7EqualParams(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
         self.inc = DoubleConv(in_channels, 7, kernel_size=7)                       
@@ -177,6 +162,7 @@ class Encoder7x7EqualParams_2(nn.Module):
         x4 = self.down3(x3)
         x5 = self.down4(x4)
         return x1, x2, x3, x4, x5
+    
 
 class EncoderBest(nn.Module):
     def __init__(self, in_channels):
@@ -223,45 +209,6 @@ class EncoderSmall(nn.Module):
         self.inc = DoubleConv(in_channels, 32, kernel_size)
         self.down1 = Down(32, 64, kernel_size)
         self.down2 = Down(64, 128, kernel_size)
-
-    def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        return x1, x2, x3
-
-class EncoderSmall1x1(nn.Module):
-    def __init__(self, in_channels, kernel_size=1):
-        super().__init__()
-        self.inc = DoubleConv(in_channels, 95, kernel_size) 
-        self.down1 = Down(95, 190, kernel_size) 
-        self.down2 = Down(190, 380, kernel_size)
-
-    def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        return x1, x2, x3
-
-class EncoderSmall7x7(nn.Module):
-    def __init__(self, in_channels, kernel_size=7):
-        super().__init__()
-        self.inc = DoubleConv(in_channels, 14, kernel_size)
-        self.down1 = Down(14, 28, kernel_size)
-        self.down2 = Down(28, 56, kernel_size)
-
-    def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        return x1, x2, x3
-
-class EncoderSmall11x11(nn.Module):
-    def __init__(self, in_channels, kernel_size=11):
-        super().__init__()
-        self.inc = DoubleConv(in_channels, 9, kernel_size)
-        self.down1 = Down(9, 18, kernel_size)
-        self.down2 = Down(18, 36, kernel_size)
 
     def forward(self, x):
         x1 = self.inc(x)
