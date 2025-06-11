@@ -124,7 +124,7 @@ def load_sample(sample, use_s1, use_s2_RGB, use_s2_hr, use_s2_hr_mr, use_s2_all,
     #total_time = time.time() - total_start
     #print(f"Total: {total_time:.4f}s | load_s1s2: {times['load_s1s2']:.4f}s | load_dfc: {times['load_dfc']:.4f}s | remap: {times['remap']:.4f}s")
 
-    return {'image': img, 'label': dfc, 'id': sample["id"]}
+    return {'image': img, 'label': dfc, 'id': sample["id"], 'majority_class': sample['majority_class']}
 
 
 #  calculate number of input channels  
@@ -229,9 +229,10 @@ class DFC20(data.Dataset):
                 "s1": meta["path_s1"],
                 "s2": meta["path_s2"],
                 "dfc": meta["path_dfc"],
-                "id": meta["id"]
+                "id": meta["id"],
+                "majority_class": meta["majority_class"]
             })
-            self.image_majority_class.append(meta["majority_class"])
+            #self.image_majority_class.append(meta["majority_class"])
 
         self.samples = sorted(self.samples, key=lambda x: x["id"])
 
@@ -272,7 +273,8 @@ class DFC20(data.Dataset):
             label = sample['label']
 
         # add majority label
-        majority_class = self.image_majority_class[index]
+        #majority_class = self.image_majority_class[index]
+        majority_class = sample["majority_class"]
 
         # convert to tensor
         if self.as_tensor:

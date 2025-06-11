@@ -27,7 +27,7 @@ class AutoSizedMajorityClassifier(nn.Module):
 
         # Get input channels from desired encoder output
         with torch.no_grad():
-            dummy_input = torch.randn(1, 4, 256, 256)  
+            dummy_input = torch.randn(1, 13, 256, 256)  
             features = self.encoder(dummy_input)
             selected_feature = features[feature_level]
             in_channels = selected_feature.shape[1]
