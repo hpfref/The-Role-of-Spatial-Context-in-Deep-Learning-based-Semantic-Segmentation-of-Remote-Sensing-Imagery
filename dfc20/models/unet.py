@@ -7,11 +7,11 @@ import torch.nn.functional as F
 from encoder import *
 from decoder import *
 
-class UNetBest(nn.Module):
+class UNetBaseBig(nn.Module):
     def __init__(self, n_channels, bilinear=True):
-        super(UNetBest, self).__init__()
-        self.encoder = EncoderBest(n_channels)
-        self.decoder = DecoderBest(bilinear)
+        super(UNetBaseBig, self).__init__()
+        self.encoder = EncoderBaseBig(n_channels)
+        self.decoder = DecoderBaseBig(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5 = self.encoder(x)
@@ -71,6 +71,17 @@ class UNetPool2(nn.Module):
         x1, x2, x3 = self.encoder(x)
         logits = self.decoder(x1, x2, x3)
         return logits
+    
+class UNetPool2Big(nn.Module):
+    def __init__(self, n_channels, bilinear=True):
+        super(UNetPool2Big, self).__init__()
+        self.encoder = EncoderPool2Big(n_channels)
+        self.decoder = DecoderPool2Big(bilinear)
+
+    def forward(self, x):
+        x1, x2, x3 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3)
+        return logits
 class UNetPool3(nn.Module):
     def __init__(self, n_channels, bilinear=True):
         super(UNetPool3, self).__init__()
@@ -82,6 +93,16 @@ class UNetPool3(nn.Module):
         logits = self.decoder(x1, x2, x3, x4)
         return logits
 
+class UNetPool3Big(nn.Module):
+    def __init__(self, n_channels, bilinear=True):
+        super(UNetPool3Big, self).__init__()
+        self.encoder = EncoderPool3Big(n_channels)
+        self.decoder = DecoderPool3Big(bilinear)
+
+    def forward(self, x):
+        x1, x2, x3, x4 = self.encoder(x)
+        logits = self.decoder(x1, x2, x3, x4)
+        return logits
 class UNetDilated(nn.Module):
     def __init__(self, n_channels, bilinear=True):
         super(UNetDilated, self).__init__()

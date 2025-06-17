@@ -80,8 +80,8 @@ class DecoderBase(nn.Module):
 class DecoderPool0RF1(nn.Module):
     def __init__(self):
         super().__init__()
-        self.up1 = DoubleConv(100+100, 100)
-        self.outc = OutConv(100, 8)
+        self.up1 = DoubleConv(200+200, 200, kernel_size=1)
+        self.outc = OutConv(200, 8)
 
     def forward(self, x1, x2):
         x = torch.cat([x2, x1], dim=1)
@@ -121,6 +121,18 @@ class DecoderPool2(nn.Module):
         x = self.up2(x, x1)
         x = self.outc(x)
         return x
+class DecoderPool2Big(nn.Module):
+    def __init__(self, bilinear=True):
+        super().__init__()
+        self.up1 = Up(512, 512, 256, bilinear)
+        self.up2 = Up(256, 256, 256, bilinear)
+        self.outc = OutConv(256, 8)
+
+    def forward(self, x1, x2, x3):
+        x = self.up1(x3, x2)
+        x = self.up2(x, x1)
+        x = self.outc(x)
+        return x
 class DecoderPool3(nn.Module):
     def __init__(self, bilinear=True):
         super().__init__()
@@ -128,6 +140,21 @@ class DecoderPool3(nn.Module):
         self.up2 = Up(64, 64, 32, bilinear)
         self.up3 = Up(32, 32, 32, bilinear)                                             
         self.outc = OutConv(32, 8)
+
+    def forward(self, x1, x2, x3, x4):
+        x = self.up1(x4, x3)
+        x = self.up2(x, x2)
+        x = self.up3(x, x1)
+        x = self.outc(x)
+        return x
+
+class DecoderPool3Big(nn.Module):
+    def __init__(self, bilinear=True):
+        super().__init__()
+        self.up1 = Up(512, 512, 256, bilinear)
+        self.up2 = Up(256, 256, 128, bilinear)
+        self.up3 = Up(128, 128, 128, bilinear)                                             
+        self.outc = OutConv(128, 8)
 
     def forward(self, x1, x2, x3, x4):
         x = self.up1(x4, x3)
@@ -240,7 +267,7 @@ class Decoder7x7EqualParams(nn.Module):
         return x
     
     
-class DecoderBest(nn.Module):
+class DecoderBaseBig(nn.Module):
     def __init__(self, bilinear=True):
         super().__init__()
         self.up1 = Up(512, 512, 256, bilinear, apply_dropout=False)
