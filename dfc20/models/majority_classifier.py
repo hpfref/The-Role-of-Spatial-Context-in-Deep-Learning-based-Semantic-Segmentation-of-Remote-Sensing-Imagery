@@ -12,7 +12,7 @@ class DummyEncoder(nn.Module):
         return [x]
     
 class AutoSizedMajorityClassifier(nn.Module):
-    def __init__(self, encoder, feature_level, num_classes=8, target_head_params=1000):
+    def __init__(self, encoder, feature_level, num_classes=8, target_head_params=1000, channels=13):
         """
         Args:
             encoder: feature extractor (returns list of features)
@@ -27,7 +27,7 @@ class AutoSizedMajorityClassifier(nn.Module):
 
         # Get input channels from desired encoder output
         with torch.no_grad():
-            dummy_input = torch.randn(1, 13, 256, 256)  
+            dummy_input = torch.randn(1, channels, 256, 256)  
             features = self.encoder(dummy_input)
             selected_feature = features[feature_level]
             in_channels = selected_feature.shape[1]
