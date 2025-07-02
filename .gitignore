@@ -1,2 +1,3 @@
-dfc20/data/
+dfc20/data/**
+dfc18/data/**
 **/__pycache__/
