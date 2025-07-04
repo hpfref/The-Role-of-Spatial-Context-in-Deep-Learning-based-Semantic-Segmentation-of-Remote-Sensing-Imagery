@@ -36,8 +36,15 @@ class DFC18(data.Dataset):
         self.blur_kernel = blur_kernel
         self.n_classes = 21  
 
+        # Class Frequencies
+        self.freq = np.array([0, 1.90555569e-02, 6.57992732e-02, 1.36151029e-03, 2.67724482e-02,
+                    9.97414111e-03, 8.04829999e-03, 4.61384373e-04, 7.72459578e-02,
+                    4.54671975e-01, 8.62569455e-02, 5.70884499e-02, 3.10250849e-03,
+                    9.54861768e-02, 2.00251306e-02, 1.39215162e-02, 2.25124844e-02,
+                    2.54609286e-04, 1.32041993e-02, 1.08724781e-02, 1.38849544e-02])
+
         # Class info
-        class_info = {
+        self.class_info = class_info = {
             0:  ('Unclassified',            (0,   0,   0  )),    # Black / No data
             1:  ('Healthy grass',           (0,  255,   0  )),    # Bright green
             2:  ('Stressed grass',          (128, 128,  0  )),    # Olive / dull green
