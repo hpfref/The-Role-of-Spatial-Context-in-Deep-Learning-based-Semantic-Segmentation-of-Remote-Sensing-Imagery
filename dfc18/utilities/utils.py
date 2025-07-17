@@ -4,6 +4,11 @@ import torch.nn.functional as F
 from torch.utils.data import Sampler
 from collections import defaultdict, Counter
 import random
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import numpy as np
 
 class WarmUpLR:
     def __init__(self, optimizer, warmup_epochs, base_lr):
@@ -85,34 +90,44 @@ class ComboLossFocal(nn.Module):
 class FocalLoss(nn.Module):
     def __init__(self, alpha=0.25, gamma=2.0, weight=None, reduction='mean', ignore_index=None):
         super(FocalLoss, self).__init__()
-        self.alpha = alpha
         self.gamma = gamma
         self.weight = weight
         self.reduction = reduction
         self.ignore_index = ignore_index
+
+        if isinstance(alpha, (list, np.ndarray)):
+            self.alpha = torch.tensor(alpha, dtype=torch.float32)
+        else:
+            self.alpha = alpha  # scalar or tensor
 
     def forward(self, inputs, targets):
         B, C, H, W = inputs.shape
         inputs = inputs.permute(0, 2, 3, 1).reshape(-1, C)  # [B*H*W, C]
         targets = targets.view(-1)  # [B*H*W]
 
-        # Compute cross-entropy per pixel without reduction
-        ce_loss = F.cross_entropy(inputs, targets, weight=self.weight, reduction='none', ignore_index=self.ignore_index)  # [B*H*W]
+        ce_loss = F.cross_entropy(inputs, targets, weight=self.weight, reduction='none', ignore_index=self.ignore_index)
 
-        # Create mask for pixels not ignored
         if self.ignore_index is not None:
             mask = (targets != self.ignore_index)
-            ce_loss = ce_loss * mask.float()  # zero out ignored pixels
+            ce_loss = ce_loss * mask.float()
+        else:
+            mask = torch.ones_like(ce_loss, dtype=torch.bool)
 
         pt = torch.exp(-ce_loss)
-        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
+
+        # Apply per-class alpha if tensor
+        if isinstance(self.alpha, torch.Tensor):
+            if self.alpha.device != inputs.device:
+                self.alpha = self.alpha.to(inputs.device)
+            alpha_t = self.alpha[targets]
+            alpha_t = alpha_t * mask  # zero for ignore_index
+        else:
+            alpha_t = self.alpha
+
+        focal_loss = alpha_t * (1 - pt) ** self.gamma * ce_loss
 
         if self.reduction == 'mean':
-            if self.ignore_index is not None:
-                # Avoid dividing by zero if all pixels ignored
-                return focal_loss.sum() / mask.sum().clamp_min(1)
-            else:
-                return focal_loss.mean()
+            return focal_loss.sum() / mask.sum().clamp_min(1)
         elif self.reduction == 'sum':
             return focal_loss.sum()
         else:
@@ -200,7 +215,7 @@ class PolyLR(torch.optim.lr_scheduler._LRScheduler):
         ]
     
 
-class MajorityClassSampler(Sampler):
+class BatchBalancingSampler(Sampler):
     def __init__(self, majority_classes, batch_size, min_samples_per_class=1, seed=42):
         """
         Args:
@@ -289,3 +304,101 @@ def oversample_indices(majority_classes, target_count_per_class=None, max_oversa
         new_indices.extend(indices * repeat_factor + random.sample(indices, remainder))
 
     return new_indices
+
+
+
+#### visuals
+
+def predict_patch(model, image):
+    model.eval()  # Set model to evaluation mode
+    with torch.no_grad():  # No gradients needed during inference
+        # Convert to tensor if it's not already
+        if isinstance(image, np.ndarray):
+            image = torch.tensor(image, dtype=torch.float32)
+        # Check the shape and ensure it's in the correct format [batch_size, channels, height, width]
+        if image.ndim == 3:  # If it's a single image (HxWxC)
+            image = image.unsqueeze(0)  # Add batch dimension
+        # Forward pass through the model
+        output = model(image)  # Assuming the model's output shape is [batch_size, num_classes, H, W]
+        # Apply argmax to get the predicted class for each pixel
+        pred = torch.argmax(output, dim=1).squeeze(0)  # Get the class with max score for each pixel
+        # Convert to numpy array for visualization
+        pred = pred.cpu().numpy()
+
+    return pred
+
+def compute_confusion_matrix(y_true, y_pred, num_classes):
+    """
+    Compute confusion matrix normalized globally (by total number of valid pixels),
+    excluding class 0 (unclassified).
+    """
+    y_true = y_true.flatten()
+    y_pred = y_pred.flatten()
+
+    # Ignore unclassified class (0)
+    valid = y_true != 0
+    y_true = y_true[valid]
+    y_pred = y_pred[valid]
+
+    labels = np.arange(1, num_classes)
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    total = cm.sum()
+    cm_percent = (cm.astype(np.float32) / total) * 100
+    return cm_percent
+
+
+def plot_confusion_matrix(cm, class_info):
+    class_ids = [cid for cid in sorted(class_info.keys()) if cid != 0]
+    class_names = [class_info[cid][0] for cid in class_ids]
+    class_colors_rgb = [class_info[cid][1] for cid in class_ids]
+    class_colors = [(r / 255, g / 255, b / 255) for (r, g, b) in class_colors_rgb]
+
+    cm_percent = 100 * cm / cm.sum()
+
+    num_classes = len(class_names)
+    fig_height = max(6, 9)
+    fig, ax = plt.subplots(figsize=(12, fig_height))
+
+    sns.heatmap(cm_percent, annot=True, fmt=".1f", cmap="Blues",
+                xticklabels=False, yticklabels=False,
+                square=True, linewidths=0.5,
+                cbar_kws={"label": "% of total pixels"},
+                ax=ax)
+
+    # Fix colorbar height to match heatmap
+    cbar = ax.collections[0].colorbar
+    heatmap_pos = ax.get_position()
+    cbar_ax = cbar.ax
+    cbar_pos = cbar_ax.get_position()
+    cbar_ax.set_position([cbar_pos.x0, heatmap_pos.y0, cbar_pos.width, heatmap_pos.height])
+
+    ax.set_xlim(-1.5, num_classes)
+    ax.set_ylim(num_classes, 0)
+
+    # Draw colored rectangles + class names on left
+    for ytick_pos, (name, color) in enumerate(zip(class_names, class_colors)):
+        ax.add_patch(mpatches.Rectangle(
+            (-1.3, ytick_pos + 0.25), 0.3, 0.3,
+            color=color, transform=ax.transData, clip_on=False))
+        ax.text(-1.5, ytick_pos + 0.4, name,
+                ha='right', va='center', fontsize=10)
+
+    # Draw bottom color rectangles for predicted classes
+    for xtick_pos, color in enumerate(class_colors):
+        ax.add_patch(mpatches.Rectangle(
+            (xtick_pos + 0.35, num_classes + 0.15), 0.3, 0.3,
+            color=color, transform=ax.transData, clip_on=False))
+
+    # Label: Predicted Class
+    ax.set_xlabel("Predicted Class", fontsize=12, fontweight='bold', labelpad=30)
+
+    # Label: True Class (positioned close to matrix)
+    ax_pos = ax.get_position()
+    fig.text(ax_pos.x1 + 0.09, ax_pos.y0 + ax_pos.height / 2,
+             "True Class", va='center', ha='left',
+             fontsize=12, fontweight='bold', rotation=270)
+
+    ax.set_title("Confusion Matrix (% of total pixels)", fontsize=14, pad=20)
+    ax.tick_params(left=False, bottom=False)
+    plt.tight_layout()
+    plt.show()

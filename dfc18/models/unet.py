@@ -23,8 +23,8 @@ class UNetBaseBig(nn.Module):
 class UNetBase(nn.Module):
     def __init__(self, n_channels, bilinear=True):
         super(UNetBase, self).__init__()
-        self.encoder = EncoderBase32(n_channels)
-        self.decoder = DecoderBase32(bilinear)
+        self.encoder = EncoderBase(n_channels)
+        self.decoder = DecoderBase(bilinear)
 
     def forward(self, x):
         x1, x2, x3, x4, x5 = self.encoder(x)
@@ -44,8 +44,8 @@ class UNetRF1(nn.Module):
 class UNetPool0(nn.Module):
     def __init__(self, n_channels):
         super(UNetPool0, self).__init__()
-        self.encoder = EncoderPool0(n_channels)
-        self.decoder = DecoderPool0()
+        self.encoder = EncoderPool0Test(n_channels)
+        self.decoder = DecoderPool0Test()
 
     def forward(self, x):
         x1, x2 = self.encoder(x)

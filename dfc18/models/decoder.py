@@ -77,14 +77,14 @@ class DecoderBase(nn.Module):
         x = self.outc(x)
         return x
 
-class DecoderBase32(nn.Module):
+class DecoderBase20(nn.Module):
     def __init__(self, bilinear=True):
         super().__init__()
-        self.up1 = Up(256, 256, 128, bilinear, apply_dropout=False)
-        self.up2 = Up(128, 128, 64, bilinear, apply_dropout=False)
-        self.up3 = Up(64, 64, 32, bilinear)                       
-        self.up4 = Up(32, 32, 32, bilinear)                      
-        self.outc = OutConv(32, 21)
+        self.up1 = Up(160, 160, 80, bilinear, apply_dropout=False)
+        self.up2 = Up(80, 80, 40, bilinear, apply_dropout=False)
+        self.up3 = Up(40, 40, 20, bilinear)                       
+        self.up4 = Up(20, 20, 20, bilinear)                      
+        self.outc = OutConv(20, 21)
 
     def forward(self, x1, x2, x3, x4, x5):
         x = self.up1(x5, x4)
@@ -110,6 +110,18 @@ class DecoderPool0(nn.Module):
         super().__init__()
         self.up1 = DoubleConv(128+128, 128)
         self.outc = OutConv(128, 21)
+
+    def forward(self, x1, x2):
+        x = torch.cat([x2, x1], dim=1)
+        x = self.up1(x)
+        x = self.outc(x)
+        return x
+    
+class DecoderPool0Test(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.up1 = DoubleConv(160+160, 160)
+        self.outc = OutConv(160, 21)
 
     def forward(self, x1, x2):
         x = torch.cat([x2, x1], dim=1)

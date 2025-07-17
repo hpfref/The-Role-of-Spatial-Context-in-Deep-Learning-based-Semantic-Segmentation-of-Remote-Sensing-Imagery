@@ -60,22 +60,6 @@ class EncoderBase(nn.Module):
         x5 = self.down4(x4)
         return x1, x2, x3, x4, x5
     
-class EncoderBase32(nn.Module):
-    def __init__(self, in_channels):
-        super().__init__()
-        self.inc = DoubleConv(in_channels, 32)                       
-        self.down1 = Down(32, 64)                                    
-        self.down2 = Down(64, 128)                                 
-        self.down3 = Down(128, 256, apply_dropout=False)             
-        self.down4 = Down(256, 256, apply_dropout=False)             
-
-    def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5 = self.down4(x4)
-        return x1, x2, x3, x4, x5
 
 class EncoderPool0RF1(nn.Module):
     def __init__(self, in_channels):
@@ -98,6 +82,17 @@ class EncoderPool0(nn.Module):
         x2 = self.down1(x1)
         return x1, x2
 
+class EncoderPool0Test(nn.Module):
+    def __init__(self, in_channels):
+        super().__init__()
+        self.inc = DoubleConv(in_channels, 160)                       
+        self.down1 = DoubleConv(160, 160)                                                                                            
+
+    def forward(self, x):
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        return x1, x2
+    
 class EncoderPool1(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
