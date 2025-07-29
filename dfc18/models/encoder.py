@@ -82,17 +82,7 @@ class EncoderPool0(nn.Module):
         x2 = self.down1(x1)
         return x1, x2
 
-class EncoderPool0Test(nn.Module):
-    def __init__(self, in_channels):
-        super().__init__()
-        self.inc = DoubleConv(in_channels, 160)                       
-        self.down1 = DoubleConv(160, 160)                                                                                            
 
-    def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        return x1, x2
-    
 class EncoderPool1(nn.Module):
     def __init__(self, in_channels):
         super().__init__()

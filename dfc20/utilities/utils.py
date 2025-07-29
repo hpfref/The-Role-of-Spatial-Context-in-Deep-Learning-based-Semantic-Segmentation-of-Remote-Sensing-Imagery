@@ -312,9 +312,9 @@ def compute_confusion_matrix(y_true, y_pred, num_classes):
     y_pred = y_pred.flatten()
 
     # Ignore unclassified class (0)
-    valid = y_true != 0
-    y_true = y_true[valid]
-    y_pred = y_pred[valid]
+    #valid = y_true != 0
+    #y_true = y_true[valid]
+    #y_pred = y_pred[valid]
 
     labels = np.arange(1, num_classes)
     cm = confusion_matrix(y_true, y_pred, labels=labels)
@@ -322,12 +322,16 @@ def compute_confusion_matrix(y_true, y_pred, num_classes):
     cm_percent = (cm.astype(np.float32) / total) * 100
     return cm_percent
 
+def hex_to_rgb(hex_color):
+    """Convert hex color string (e.g., '#009900') to RGB tuple (0–1 range)"""
+    hex_color = hex_color.lstrip('#')
+    return tuple(int(hex_color[i:i+2], 16) / 255 for i in (0, 2, 4))
 
 def plot_confusion_matrix(cm, class_info):
+    # Filter out class 0 (optional; remove if you want to include it)
     class_ids = [cid for cid in sorted(class_info.keys()) if cid != 0]
     class_names = [class_info[cid][0] for cid in class_ids]
-    class_colors_rgb = [class_info[cid][1] for cid in class_ids]
-    class_colors = [(r / 255, g / 255, b / 255) for (r, g, b) in class_colors_rgb]
+    class_colors = [hex_to_rgb(class_info[cid][1]) for cid in class_ids]
 
     cm_percent = 100 * cm / cm.sum()
 
@@ -365,12 +369,10 @@ def plot_confusion_matrix(cm, class_info):
             (xtick_pos + 0.35, num_classes + 0.15), 0.3, 0.3,
             color=color, transform=ax.transData, clip_on=False))
 
-    # Label: Predicted Class
-    ax.set_xlabel("Predicted Class", fontsize=12, fontweight='bold', labelpad=30)
+    ax.set_xlabel("Predicted Class", fontsize=12, fontweight='bold', labelpad=50)
 
-    # Label: True Class (positioned close to matrix)
     ax_pos = ax.get_position()
-    fig.text(ax_pos.x1 + 0.09, ax_pos.y0 + ax_pos.height / 2,
+    fig.text(ax_pos.x1 + 0.08, ax_pos.y0 + ax_pos.height / 2,
              "True Class", va='center', ha='left',
              fontsize=12, fontweight='bold', rotation=270)
 

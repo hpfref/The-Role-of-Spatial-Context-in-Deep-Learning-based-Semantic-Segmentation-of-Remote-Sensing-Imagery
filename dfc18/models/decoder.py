@@ -117,17 +117,6 @@ class DecoderPool0(nn.Module):
         x = self.outc(x)
         return x
     
-class DecoderPool0Test(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.up1 = DoubleConv(160+160, 160)
-        self.outc = OutConv(160, 21)
-
-    def forward(self, x1, x2):
-        x = torch.cat([x2, x1], dim=1)
-        x = self.up1(x)
-        x = self.outc(x)
-        return x
 class DecoderPool1(nn.Module):
     def __init__(self, bilinear=True):
         super().__init__()

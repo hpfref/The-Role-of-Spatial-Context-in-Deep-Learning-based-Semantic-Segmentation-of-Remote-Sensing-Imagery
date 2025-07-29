@@ -44,8 +44,8 @@ class UNetRF1(nn.Module):
 class UNetPool0(nn.Module):
     def __init__(self, n_channels):
         super(UNetPool0, self).__init__()
-        self.encoder = EncoderPool0Test(n_channels)
-        self.decoder = DecoderPool0Test()
+        self.encoder = EncoderPool0(n_channels)
+        self.decoder = DecoderPool0()
 
     def forward(self, x):
         x1, x2 = self.encoder(x)
