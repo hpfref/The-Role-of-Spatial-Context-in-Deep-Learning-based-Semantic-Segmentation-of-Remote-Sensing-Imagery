@@ -347,7 +347,7 @@ def compute_confusion_matrix(y_true, y_pred, num_classes):
     return cm_percent
 
 
-def plot_confusion_matrix(cm, class_info):
+def plot_confusion_matrix(cm, class_info, title):
     class_ids = [cid for cid in sorted(class_info.keys()) if cid != 0]
     class_names = [class_info[cid][0] for cid in class_ids]
     class_colors_rgb = [class_info[cid][1] for cid in class_ids]
@@ -362,26 +362,18 @@ def plot_confusion_matrix(cm, class_info):
     sns.heatmap(cm_percent, annot=True, fmt=".1f", cmap="Blues",
                 xticklabels=False, yticklabels=False,
                 square=True, linewidths=0.5,
-                cbar_kws={"label": "% of total pixels"},
+                #cbar_kws={"label": "% of total pixels"},
+                cbar=False,
+                annot_kws={"size": 11},
                 ax=ax)
-
-    # Fix colorbar height to match heatmap
-    cbar = ax.collections[0].colorbar
-    heatmap_pos = ax.get_position()
-    cbar_ax = cbar.ax
-    cbar_pos = cbar_ax.get_position()
-    cbar_ax.set_position([cbar_pos.x0, heatmap_pos.y0, cbar_pos.width, heatmap_pos.height])
-
-    ax.set_xlim(-1.5, num_classes)
-    ax.set_ylim(num_classes, 0)
 
     # Draw colored rectangles + class names on left
     for ytick_pos, (name, color) in enumerate(zip(class_names, class_colors)):
         ax.add_patch(mpatches.Rectangle(
-            (-1.3, ytick_pos + 0.25), 0.3, 0.3,
+            (-0.6, ytick_pos + 0.25), 0.3, 0.3,
             color=color, transform=ax.transData, clip_on=False))
-        ax.text(-1.5, ytick_pos + 0.4, name,
-                ha='right', va='center', fontsize=10)
+        ax.text(-0.8, ytick_pos + 0.4, name,
+                ha='right', va='center', fontsize=11)
 
     # Draw bottom color rectangles for predicted classes
     for xtick_pos, color in enumerate(class_colors):
@@ -390,15 +382,15 @@ def plot_confusion_matrix(cm, class_info):
             color=color, transform=ax.transData, clip_on=False))
 
     # Label: Predicted Class
-    ax.set_xlabel("Predicted Class", fontsize=12, fontweight='bold', labelpad=30)
+    ax.set_xlabel("Predicted Class", fontsize=14, fontweight='bold', labelpad=30)
 
     # Label: True Class (positioned close to matrix)
     ax_pos = ax.get_position()
-    fig.text(ax_pos.x1 + 0.09, ax_pos.y0 + ax_pos.height / 2,
+    fig.text(ax_pos.x1 + 0.07, ax_pos.y0 + ax_pos.height / 2,
              "True Class", va='center', ha='left',
-             fontsize=12, fontweight='bold', rotation=270)
+             fontsize=14, fontweight='bold', rotation=270)
 
-    ax.set_title("Confusion Matrix (% of total pixels)", fontsize=14, pad=20)
+    ax.set_title(title, fontsize=15, pad=20, fontweight='bold')
     ax.tick_params(left=False, bottom=False)
     plt.tight_layout()
     plt.show()

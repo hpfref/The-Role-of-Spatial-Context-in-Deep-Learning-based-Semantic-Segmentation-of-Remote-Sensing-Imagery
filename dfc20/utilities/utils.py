@@ -305,18 +305,12 @@ def predict_patch(model, image):
 
 def compute_confusion_matrix(y_true, y_pred, num_classes):
     """
-    Compute confusion matrix normalized globally (by total number of valid pixels),
-    excluding class 0 (unclassified).
+    Compute confusion matrix normalized globally (by total number of valid pixels)
     """
     y_true = y_true.flatten()
     y_pred = y_pred.flatten()
 
-    # Ignore unclassified class (0)
-    #valid = y_true != 0
-    #y_true = y_true[valid]
-    #y_pred = y_pred[valid]
-
-    labels = np.arange(1, num_classes)
+    labels = np.arange(0, num_classes)
     cm = confusion_matrix(y_true, y_pred, labels=labels)
     total = cm.sum()
     cm_percent = (cm.astype(np.float32) / total) * 100
@@ -327,9 +321,8 @@ def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip('#')
     return tuple(int(hex_color[i:i+2], 16) / 255 for i in (0, 2, 4))
 
-def plot_confusion_matrix(cm, class_info):
-    # Filter out class 0 (optional; remove if you want to include it)
-    class_ids = [cid for cid in sorted(class_info.keys()) if cid != 0]
+def plot_confusion_matrix(cm, class_info, title):
+    class_ids = [cid for cid in sorted(class_info.keys())] # dont filter out 0
     class_names = [class_info[cid][0] for cid in class_ids]
     class_colors = [hex_to_rgb(class_info[cid][1]) for cid in class_ids]
 
@@ -342,26 +335,18 @@ def plot_confusion_matrix(cm, class_info):
     sns.heatmap(cm_percent, annot=True, fmt=".1f", cmap="Blues",
                 xticklabels=False, yticklabels=False,
                 square=True, linewidths=0.5,
-                cbar_kws={"label": "% of total pixels"},
+                #cbar_kws={"label": "% of total pixels"},
+                cbar=False,
+                annot_kws={"size": 14},
                 ax=ax)
-
-    # Fix colorbar height to match heatmap
-    cbar = ax.collections[0].colorbar
-    heatmap_pos = ax.get_position()
-    cbar_ax = cbar.ax
-    cbar_pos = cbar_ax.get_position()
-    cbar_ax.set_position([cbar_pos.x0, heatmap_pos.y0, cbar_pos.width, heatmap_pos.height])
-
-    ax.set_xlim(-1.5, num_classes)
-    ax.set_ylim(num_classes, 0)
 
     # Draw colored rectangles + class names on left
     for ytick_pos, (name, color) in enumerate(zip(class_names, class_colors)):
         ax.add_patch(mpatches.Rectangle(
-            (-1.3, ytick_pos + 0.25), 0.3, 0.3,
+            (-0.5, ytick_pos + 0.35), 0.3, 0.3,
             color=color, transform=ax.transData, clip_on=False))
-        ax.text(-1.5, ytick_pos + 0.4, name,
-                ha='right', va='center', fontsize=10)
+        ax.text(-0.7, ytick_pos + 0.5, name,
+                ha='right', va='center', fontsize=14)
 
     # Draw bottom color rectangles for predicted classes
     for xtick_pos, color in enumerate(class_colors):
@@ -369,14 +354,14 @@ def plot_confusion_matrix(cm, class_info):
             (xtick_pos + 0.35, num_classes + 0.15), 0.3, 0.3,
             color=color, transform=ax.transData, clip_on=False))
 
-    ax.set_xlabel("Predicted Class", fontsize=12, fontweight='bold', labelpad=50)
+    ax.set_xlabel("Predicted Class", fontsize=14, fontweight='bold', labelpad=50)
 
     ax_pos = ax.get_position()
-    fig.text(ax_pos.x1 + 0.08, ax_pos.y0 + ax_pos.height / 2,
+    fig.text(ax_pos.x1 + 0.04, ax_pos.y0 + ax_pos.height / 2,
              "True Class", va='center', ha='left',
-             fontsize=12, fontweight='bold', rotation=270)
+             fontsize=14, fontweight='bold', rotation=270)
 
-    ax.set_title("Confusion Matrix (% of total pixels)", fontsize=14, pad=20)
+    ax.set_title(title, fontsize=15, pad=20, fontweight='bold')
     ax.tick_params(left=False, bottom=False)
     plt.tight_layout()
     plt.show()

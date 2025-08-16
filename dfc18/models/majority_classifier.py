@@ -62,3 +62,24 @@ def find_hidden_dim(in_channels, num_classes, target_params):
         else:
             low = mid + 1
     return low
+
+# for measuring encoder size:
+class TruncatedEncoder(nn.Module):
+    def __init__(self, encoder, feature_level):
+        super().__init__()
+        self.feature_level = feature_level
+
+        # Assuming encoder has submodules like layer1, layer2...
+        # You need to match these to the features returned
+        self.layers = nn.ModuleList()
+
+        # Get only the layers up to and including the selected level
+        for i, (name, layer) in enumerate(encoder.named_children()):
+            self.layers.append(layer)
+            if i == feature_level % len(encoder._modules):  # handle negative indexing
+                break
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x  # You get the last feature used by the classifier
