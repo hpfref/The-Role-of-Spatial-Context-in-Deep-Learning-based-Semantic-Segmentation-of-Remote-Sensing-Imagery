@@ -342,18 +342,20 @@ def compute_confusion_matrix(y_true, y_pred, num_classes):
 
     labels = np.arange(1, num_classes)
     cm = confusion_matrix(y_true, y_pred, labels=labels)
-    total = cm.sum()
-    cm_percent = (cm.astype(np.float32) / total) * 100
+    #cm_percent = (cm.astype(np.float32) / cm.sum()) * 100 # global norm
+    row_sums = cm.sum(axis=1, keepdims=True) # row norm
+    row_sums[row_sums == 0] = 1  # row norm
+    cm_percent = (cm.astype(np.float32) / row_sums) * 100 # row norm
     return cm_percent
 
 
-def plot_confusion_matrix(cm, class_info, title):
+def plot_confusion_matrix(cm_percent, class_info, title):
     class_ids = [cid for cid in sorted(class_info.keys()) if cid != 0]
     class_names = [class_info[cid][0] for cid in class_ids]
     class_colors_rgb = [class_info[cid][1] for cid in class_ids]
     class_colors = [(r / 255, g / 255, b / 255) for (r, g, b) in class_colors_rgb]
 
-    cm_percent = 100 * cm / cm.sum()
+    #cm_percent = 100 * cm / cm.sum()
 
     num_classes = len(class_names)
     fig_height = max(6, 9)
@@ -364,7 +366,7 @@ def plot_confusion_matrix(cm, class_info, title):
                 square=True, linewidths=0.5,
                 #cbar_kws={"label": "% of total pixels"},
                 cbar=False,
-                annot_kws={"size": 11},
+                annot_kws={"size": 10},
                 ax=ax)
 
     # Draw colored rectangles + class names on left

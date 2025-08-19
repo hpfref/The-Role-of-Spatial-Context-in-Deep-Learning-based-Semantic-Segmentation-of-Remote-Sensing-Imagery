@@ -305,15 +305,17 @@ def predict_patch(model, image):
 
 def compute_confusion_matrix(y_true, y_pred, num_classes):
     """
-    Compute confusion matrix normalized globally (by total number of valid pixels)
+    Compute confusion matrix normalized globally or per row
     """
     y_true = y_true.flatten()
     y_pred = y_pred.flatten()
 
     labels = np.arange(0, num_classes)
     cm = confusion_matrix(y_true, y_pred, labels=labels)
-    total = cm.sum()
-    cm_percent = (cm.astype(np.float32) / total) * 100
+    #cm_percent = (cm.astype(np.float32) / cm.sum()) * 100 # global norm
+    row_sums = cm.sum(axis=1, keepdims=True) # row norm
+    row_sums[row_sums == 0] = 1  # row norm
+    cm_percent = (cm.astype(np.float32) / row_sums) * 100 # row norm
     return cm_percent
 
 def hex_to_rgb(hex_color):
@@ -321,12 +323,12 @@ def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip('#')
     return tuple(int(hex_color[i:i+2], 16) / 255 for i in (0, 2, 4))
 
-def plot_confusion_matrix(cm, class_info, title):
+def plot_confusion_matrix(cm_percent, class_info, title):
     class_ids = [cid for cid in sorted(class_info.keys())] # dont filter out 0
     class_names = [class_info[cid][0] for cid in class_ids]
     class_colors = [hex_to_rgb(class_info[cid][1]) for cid in class_ids]
 
-    cm_percent = 100 * cm / cm.sum()
+    #cm_percent = 100 * cm / cm.sum()
 
     num_classes = len(class_names)
     fig_height = max(6, 9)
@@ -357,7 +359,7 @@ def plot_confusion_matrix(cm, class_info, title):
     ax.set_xlabel("Predicted Class", fontsize=14, fontweight='bold', labelpad=50)
 
     ax_pos = ax.get_position()
-    fig.text(ax_pos.x1 + 0.04, ax_pos.y0 + ax_pos.height / 2,
+    fig.text(ax_pos.x1 + 0.05, ax_pos.y0 + ax_pos.height / 2,
              "True Class", va='center', ha='left',
              fontsize=14, fontweight='bold', rotation=270)
 
