@@ -1,0 +1,55 @@
+[
+  {"Data": "DFC2020 S2", "Model": "Base", "ExpType": "B", "mIoU": 0.6881, "SizeMB": 3.26, "RF": [205,205], "ERF01": [126,127], "ERF25": [14,15]},
+  {"Data": "DFC2020 S2", "Model": "C64 (Base-Large)", "ExpType": "L", "mIoU": 0.7334, "SizeMB": 51.20, "RF": [205,205], "ERF01": [31,31], "ERF25": [9,9]},
+
+  {"Data": "DFC2020 S1", "Model": "Base", "ExpType": "B", "mIoU": 0.5838, "SizeMB": 3.26, "RF": [205,205], "ERF01": [83,91], "ERF25": [8,10]},
+  {"Data": "DFC2020 S1", "Model": "C64 (Base-Large)", "ExpType": "L", "mIoU": 0.6005, "SizeMB": 51.18, "RF": [205,205], "ERF01": [61,55], "ERF25": [13,13]},
+
+  {"Data": "DFC2018 RGB", "Model": "Base", "ExpType": "B", "mIoU": 0.4113, "SizeMB": 3.26, "RF": [205,205], "ERF01": [32,34], "ERF25": [7,8]},
+  {"Data": "DFC2018 RGB", "Model": "C64 (Base-Large)", "ExpType": "L", "mIoU": 0.4302, "SizeMB": 51.18, "RF": [205,205], "ERF01": [37,40], "ERF25": [9,11]},
+
+  {"Data": "DFC2020 S2", "Model": "K1", "ExpType": "K", "mIoU": 0.6502, "SizeMB": 0.42, "RF": [17,17], "ERF01": [17,17], "ERF25": [9,9]},
+  {"Data": "DFC2020 S2", "Model": "K5", "ExpType": "K", "mIoU": 0.6839, "SizeMB": 8.95, "RF": [256,256], "ERF01": [42,41], "ERF25": [9,10]},
+  {"Data": "DFC2020 S2", "Model": "K7", "ExpType": "K", "mIoU": 0.6686, "SizeMB": 17.48, "RF": [256,256], "ERF01": [90,85], "ERF25": [26,35]},
+
+  {"Data": "DFC2020 S1", "Model": "K1", "ExpType": "K", "mIoU": 0.4784, "SizeMB": 0.42, "RF": [17,17], "ERF01": [17,17], "ERF25": [17,17]},
+  {"Data": "DFC2020 S1", "Model": "K5", "ExpType": "K", "mIoU": 0.5887, "SizeMB": 8.93, "RF": [256,256], "ERF01": [58,58], "ERF25": [12,13]},
+  {"Data": "DFC2020 S1", "Model": "K7", "ExpType": "K", "mIoU": 0.5798, "SizeMB": 17.44, "RF": [256,256], "ERF01": [85,83], "ERF25": [17,21]},
+
+  {"Data": "DFC2018 RGB", "Model": "K1", "ExpType": "K", "mIoU": 0.3261, "SizeMB": 0.42, "RF": [17,17], "ERF01": [17,17], "ERF25": [17,17]},
+  {"Data": "DFC2018 RGB", "Model": "K5", "ExpType": "K", "mIoU": 0.4208, "SizeMB": 8.93, "RF": [256,256], "ERF01": [55,54], "ERF25": [12,12]},
+  {"Data": "DFC2018 RGB", "Model": "K7", "ExpType": "K", "mIoU": 0.4230, "SizeMB": 17.45, "RF": [256,256], "ERF01": [49,44], "ERF25": [17,14]},
+
+  {"Data": "DFC2020 S2", "Model": "K1-C48", "ExpType": "C", "mIoU": 0.7141, "SizeMB": 3.30, "RF": [17,17], "ERF01": [17,17], "ERF25": [17,17]},
+  {"Data": "DFC2020 S2", "Model": "D2", "ExpType": "C", "mIoU": 0.6746, "SizeMB": 3.26, "RF": [256,256], "ERF01": [169,177], "ERF25": [5,7]},
+  {"Data": "DFC2020 S2", "Model": "K5-C10", "ExpType": "C", "mIoU": 0.6464, "SizeMB": 3.53, "RF": [256,256], "ERF01": [35,33], "ERF25": [12,11]},
+  {"Data": "DFC2020 S2", "Model": "K7-C7", "ExpType": "C", "mIoU": 0.5899, "SizeMB": 3.40, "RF": [256,256], "ERF01": [150,134], "ERF25": [26,34]},
+
+  {"Data": "DFC2020 S1", "Model": "K1-C48", "ExpType": "C", "mIoU": 0.5049, "SizeMB": 3.30, "RF": [17,17], "ERF01": [17,17], "ERF25": [1,1]},
+  {"Data": "DFC2020 S1", "Model": "D2", "ExpType": "C", "mIoU": 0.5736, "SizeMB": 3.26, "RF": [256,256], "ERF01": [177,185], "ERF25": [12,17]},
+  {"Data": "DFC2020 S1", "Model": "K5-C10", "ExpType": "C", "mIoU": 0.5732, "SizeMB": 3.52, "RF": [256,256], "ERF01": [72,71], "ERF25": [14,13]},
+  {"Data": "DFC2020 S1", "Model": "K7-C7", "ExpType": "C", "mIoU": 0.4450, "SizeMB": 3.38, "RF": [256,256], "ERF01": [71,69], "ERF25": [16,15]},
+
+  {"Data": "DFC2018 RGB", "Model": "K1-C48", "ExpType": "C", "mIoU": 0.3561, "SizeMB": 3.30, "RF": [17,17], "ERF01": [17,17], "ERF25": [9,9]},
+  {"Data": "DFC2018 RGB", "Model": "D2", "ExpType": "C", "mIoU": 0.4083, "SizeMB": 3.26, "RF": [256,256], "ERF01": [177,130], "ERF25": [16,13]},
+  {"Data": "DFC2018 RGB", "Model": "K5-C10", "ExpType": "C", "mIoU": 0.4116, "SizeMB": 3.52, "RF": [256,256], "ERF01": [172,170], "ERF25": [10,14]},
+  {"Data": "DFC2018 RGB", "Model": "K7-C7", "ExpType": "C", "mIoU": 0.3426, "SizeMB": 3.38, "RF": [256,256], "ERF01": [120,106], "ERF25": [18,17]},
+
+  {"Data": "DFC2020 S2", "Model": "P3-C32", "ExpType": "P", "mIoU": 0.7111, "SizeMB": 3.27, "RF": [101,101], "ERF01": [38,41], "ERF25": [8,9]},
+  {"Data": "DFC2020 S2", "Model": "P2-C64", "ExpType": "P", "mIoU": 0.7178, "SizeMB": 3.31, "RF": [49,49], "ERF01": [38,35], "ERF25": [11,9]},
+  {"Data": "DFC2020 S2", "Model": "P1-C128", "ExpType": "P", "mIoU": 0.7221, "SizeMB": 3.47, "RF": [19,19], "ERF01": [17,17], "ERF25": [11,10]},
+  {"Data": "DFC2020 S2", "Model": "P0-C128", "ExpType": "P", "mIoU": 0.7134, "SizeMB": 3.47, "RF": [13,13], "ERF01": [13,13], "ERF25": [6,6]},
+  {"Data": "DFC2020 S2", "Model": "P0-K1-C200", "ExpType": "P", "mIoU": 0.6602, "SizeMB": 0.97, "RF": [1,1], "ERF01": [1,1], "ERF25": [1,1]},
+
+  {"Data": "DFC2020 S1", "Model": "P3-C32", "ExpType": "P", "mIoU": 0.5680, "SizeMB": 3.26, "RF": [101,101], "ERF01": [38,38], "ERF25": [8,8]},
+  {"Data": "DFC2020 S1", "Model": "P2-C64", "ExpType": "P", "mIoU": 0.5425, "SizeMB": 3.28, "RF": [49,49], "ERF01": [37,37], "ERF25": [17,18]},
+  {"Data": "DFC2020 S1", "Model": "P1-C128", "ExpType": "P", "mIoU": 0.4832, "SizeMB": 3.42, "RF": [19,19], "ERF01": [18,17], "ERF25": [10,8]},
+  {"Data": "DFC2020 S1", "Model": "P0-C128", "ExpType": "P", "mIoU": 0.4395, "SizeMB": 3.42, "RF": [13,13], "ERF01": [13,13], "ERF25": [9,7]},
+  {"Data": "DFC2020 S1", "Model": "P0-K1-C200", "ExpType": "P", "mIoU": 0.2741, "SizeMB": 0.96, "RF": [1,1], "ERF01": [1,1], "ERF25": [1,1]},
+
+  {"Data": "DFC2018 RGB", "Model": "P3-C32", "ExpType": "P", "mIoU": 0.3991, "SizeMB": 3.26, "RF": [101,101], "ERF01": [54,52], "ERF25": [10,13]},
+  {"Data": "DFC2018 RGB", "Model": "P2-C64", "ExpType": "P", "mIoU": 0.3553, "SizeMB": 3.29, "RF": [49,49], "ERF01": [36,37], "ERF25": [15,13]},
+  {"Data": "DFC2018 RGB", "Model": "P1-C128", "ExpType": "P", "mIoU": 0.3072, "SizeMB": 3.43, "RF": [19,19], "ERF01": [18,19], "ERF25": [13,12]},
+  {"Data": "DFC2018 RGB", "Model": "P0-C128", "ExpType": "P", "mIoU": 0.2953, "SizeMB": 3.43, "RF": [13,13], "ERF01": [13,13], "ERF25": [7,6]},
+  {"Data": "DFC2018 RGB", "Model": "P0-K1-C200", "ExpType": "P", "mIoU": 0.2097, "SizeMB": 0.97, "RF": [1,1], "ERF01": [1,1], "ERF25": [1,1]}
+]
