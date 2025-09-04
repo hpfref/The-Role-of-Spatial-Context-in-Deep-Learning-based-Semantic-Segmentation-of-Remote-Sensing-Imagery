@@ -8,35 +8,31 @@ While recent research often assumes that global context is crucial, these experi
 
 ## Setup
 
-This project was implemented with Python 3.12 and the packages are listed below. Two options are provided for installing dependencies:
-
-### 1. Using pip
-
-It is recommended to create a virtual environment.
+This project was implemented with Python 3.12 and the packages are listed below. It is recommended to create a virtual environment before installing dependencies.
 
 On Windows:
 ```bash
 python -m venv spatial_context_env
 spatial_context_env\Scripts\activate
 ```
+
 On macOS/Linux: 
 ```bash
 python -m venv spatial_context_env
 source spatial_context_env/bin/activate
 ```
 
-Then install all dependencies:
+Install PyTorch and torchvision with GPU support first:
+```bash
+pip install torch==2.7.0+cu128 torchvision==0.22.0+cu128 --index-url https://download.pytorch.org/whl/cu128
+```
+
+Then install the rest of the dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Using conda
-Create and activate the environment:
-
-```bash
-conda env create -f environment.yml
-conda activate spatial_context_env
-```
+Note: requirements.txt does not include torch or torchvision, as CUDA-specific versions must be installed separately.
 
 ## Data  
 
