@@ -8,7 +8,7 @@ While recent research often assumes that global context is crucial, these experi
 
 ## Setup
 
-This project requires Python 3.12 and the packages listed below. Two options are provided for installing dependencies:
+This project was implemented with Python 3.12 and the packages are listed below. Two options are provided for installing dependencies:
 
 ### 1. Using pip
 
@@ -37,8 +37,6 @@ Create and activate the environment:
 conda env create -f environment.yml
 conda activate spatial_context_env
 ```
-
-This ensures that Python, PyTorch (with GPU support), and all other required libraries are installed in an isolated, reproducible environment.
 
 ## Data  
 
