@@ -71,7 +71,7 @@ Class distributions are visualized using `dfc20/split.ipynb` (DFC2020) and `dfc1
 A combined summary graphic of the segmentation experiments is generated in `visualizations/combined_results/visualize_all_results.ipynb`:
 
 ![Segmentation Results](visualizations/segmentation_results_with_offset.png)  
-*Results across segmentation experiments.Performance (mIoU) is plotted against the theoretical
+*Results across segmentation experiments. Performance (mIoU) is plotted against the theoretical
 receptive field size (RF). Markers indicate the experiment type, with their size
 scaled non-linearly by model size ranges. A small random jitter is applied to the
 x-axis to improve readability and reduce overlap.*
