@@ -1,3 +1,4 @@
 dfc20/data/**
 dfc18/data/**
 **/__pycache__/
+*.pyc
