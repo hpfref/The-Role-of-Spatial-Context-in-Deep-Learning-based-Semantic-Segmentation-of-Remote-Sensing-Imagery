@@ -62,6 +62,7 @@ The experiments are run via:
 - `train_majority.ipynb` – auxiliary majority-class experiments (DFC2020 only)  
 
 Hyperparameters and sensor modality are set in the **(TUNED) PARAMETERS** section, and the model architecture is chosen in the **MODEL CHOICE** section. Available models are in the `models` folder inside each dataset directory.  
+Saved models can be tested on unseen data at the bottom of the notebooks. 
 
 ## Visualization  
 
