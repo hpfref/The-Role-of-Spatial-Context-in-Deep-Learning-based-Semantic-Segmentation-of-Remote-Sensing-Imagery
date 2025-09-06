@@ -56,10 +56,10 @@ The experiments use two publicly available datasets: DFC2020 (multispectral + SA
 
 ## Training  
 
-Segmentation experiments are run via:  
+The experiments are run via:  
 
-- `train_segmentation.ipynb` – main experiments (DFC2020 + DFC2018)  
-- `train_majority.ipynb` – majority-class baseline (DFC2020 only)  
+- `train_segmentation.ipynb` – main segmentation experiments (DFC2020 + DFC2018)  
+- `train_majority.ipynb` – auxiliary majority-class experiments (DFC2020 only)  
 
 Hyperparameters and sensor modality are set in the **(TUNED) PARAMETERS** section, and the model architecture is chosen in the **MODEL CHOICE** section. Available models are in the `models` folder inside each dataset directory.  
 
