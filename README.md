@@ -56,12 +56,13 @@ The experiments use two publicly available datasets: DFC2020 (multispectral + SA
 
 ## Training  
 
-Segmentation experiments are run via:  
+The experiments are run via:  
 
-- `train_segmentation.ipynb` – main experiments (DFC2020 + DFC2018)  
-- `train_majority.ipynb` – majority-class baseline (DFC2020 only)  
+- `train_segmentation.ipynb` – main segmentation experiments (DFC2020 + DFC2018)  
+- `train_majority.ipynb` – auxiliary majority-class experiments (DFC2020 only)  
 
 Hyperparameters and sensor modality are set in the **(TUNED) PARAMETERS** section, and the model architecture is chosen in the **MODEL CHOICE** section. Available models are in the `models` folder inside each dataset directory.  
+Saved models can be tested on unseen data at the bottom of the notebooks. 
 
 ## Visualization  
 
@@ -71,7 +72,7 @@ Class distributions are visualized using `dfc20/split.ipynb` (DFC2020) and `dfc1
 A combined summary graphic of the segmentation experiments is generated in `visualizations/combined_results/visualize_all_results.ipynb`:
 
 ![Segmentation Results](visualizations/segmentation_results_with_offset.png)  
-*Results across segmentation experiments.Performance (mIoU) is plotted against the theoretical
+*Results across segmentation experiments. Performance (mIoU) is plotted against the theoretical
 receptive field size (RF). Markers indicate the experiment type, with their size
 scaled non-linearly by model size ranges. A small random jitter is applied to the
 x-axis to improve readability and reduce overlap.*
